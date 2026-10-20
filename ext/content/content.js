@@ -410,6 +410,84 @@
     // The bar exists: drop the first-paint placeholder strip.
     document.documentElement.classList.add('dcinema-ready')
   }
+  // ------------------------------------------------------- loop control
+  /**
+   * A "循环" switch in the player's own control bar. It clones the 连播 entry so it
+   * inherits the site's switch markup and styling, then swaps the label and binds
+   * its own behaviour: toggling `video.loop` for every video element, off by
+   * default, re-applied when the player swaps videos.
+   */
+  let loopEnabled = false
+
+  const applyLoop = () => {
+    for (const video of document.querySelectorAll('video')) {
+      if (video.loop !== loopEnabled) video.loop = loopEnabled
+    }
+  }
+
+  const buildLoopControl = (anchor) => {
+    const node = anchor.cloneNode(true)
+    node.classList.add('dcinema-loop')
+    for (const element of [node, ...node.querySelectorAll('*')]) {
+      element.removeAttribute('data-e2e')
+      element.removeAttribute('data-e2e-state')
+    }
+
+    const title = node.querySelector('.xgplayer-setting-title')
+    if (title) title.textContent = '循环'
+
+    // The clone carries the autoplay tooltip ("自动连播 K"); replace it.
+    const tips = node.querySelector('.xgTips')
+    if (tips) {
+      tips.textContent = ''
+      const label = document.createElement('span')
+      label.textContent = '循环播放'
+      tips.appendChild(label)
+    }
+
+    const switchNode = node.querySelector('button.xg-switch')
+    if (switchNode) {
+      switchNode.setAttribute('aria-checked', 'false')
+      switchNode.setAttribute('aria-label', '循环播放')
+    }
+
+    node.addEventListener(
+      'click',
+      (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        loopEnabled = !loopEnabled
+        if (switchNode) switchNode.setAttribute('aria-checked', String(loopEnabled))
+        applyLoop()
+        toast(loopEnabled ? '已开启循环播放' : '已关闭循环播放', loopEnabled ? 'ok' : 'info')
+      },
+      true,
+    )
+    return node
+  }
+
+  const installLoopControl = () => {
+    const controls = document.querySelector('.xg-right-grid')
+    if (!controls) return
+    if (controls.querySelector('.dcinema-loop')) {
+      applyLoop()
+      return
+    }
+    const anchor = controls.querySelector('.xgplayer-autoplay-setting')
+    if (!anchor) return
+    anchor.insertAdjacentElement('afterend', buildLoopControl(anchor))
+    applyLoop()
+  }
+
+  // A freshly mounted video must inherit the current state.
+  document.addEventListener(
+    'play',
+    (event) => {
+      const video = event.target
+      if (video instanceof HTMLVideoElement && video.loop !== loopEnabled) video.loop = loopEnabled
+    },
+    true,
+  )
   // ---------------------------------------------------- left nav cleanup
   /** Sidebar entries that stay. Everything else is dropped as a whole row. */
   const KEEP_LEFT_NAV = new Set(['推荐', '关注', '朋友', '我的'])
@@ -920,6 +998,7 @@
         trimHeaderIcons()
         trimPlayerRail()
         trimPromo()
+        installLoopControl()
         trimLeftNav()
         buildBar()
         renderBarActions()
