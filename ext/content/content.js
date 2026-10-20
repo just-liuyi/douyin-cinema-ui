@@ -221,16 +221,16 @@
   }
 
   const ICON_DETAIL =
-    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M13.5 5H19v5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5 11 13" stroke-linecap="round"/><path d="M18 14.5V18a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18V7a1.5 1.5 0 0 1 1.5-1.5H9" stroke-linecap="round"/></svg>'
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M13.5 5H19v5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5 11 13" stroke-linecap="round"/><path d="M18 14.5V18a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18V7a1.5 1.5 0 0 1 1.5-1.5H9" stroke-linecap="round"/></svg>'
 
   /** Jumps to the standalone page for the video that is on screen. */
   const makeDetailButton = () => {
     const button = document.createElement('button')
     button.type = 'button'
-    button.className = 'dcinema-detail'
+    button.className = 'dcinema-detail dcinema-pill'
     button.title = '进入详情页'
     button.setAttribute('aria-label', '进入详情页')
-    button.innerHTML = ICON_DETAIL
+    button.innerHTML = `${ICON_DETAIL}<span>详情</span>`
     button.addEventListener(
       'click',
       (event) => {
@@ -872,12 +872,15 @@
       button.classList.remove('busy')
     }
   }
+  const ICON_DOWNLOAD =
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 4.5v10" stroke-linecap="round"/><path d="m8 10.8 4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 19h13" stroke-linecap="round"/></svg>'
+
   const makeButton = () => {
     const button = document.createElement('button')
     button.type = 'button'
-    button.className = 'dcinema-dl'
+    button.className = 'dcinema-dl dcinema-pill'
     button.title = '下载无水印视频'
-    button.textContent = '⬇'
+    button.innerHTML = `${ICON_DOWNLOAD}<span>下载</span>`
     button.addEventListener('click', doDownload, true)
     return button
   }

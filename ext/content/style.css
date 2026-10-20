@@ -229,31 +229,7 @@ html.dcinema [data-e2e='feed-item'] {
 
 /* ============================================================== download */
 
-.dcinema-dl,
-.dcinema-detail {
-  box-sizing: border-box;
-  width: 30px;
-  height: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #f5f5f7;
-  font-size: 15px;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.dcinema-dl:hover,
-.dcinema-detail:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.34);
-}
-
-.dcinema-dl.busy {
+.dcinema-pill.busy {
   border-color: #25f4ee;
   color: #25f4ee;
   animation: dcinema-pulse 1s ease-in-out infinite;
