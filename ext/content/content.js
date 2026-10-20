@@ -466,16 +466,39 @@
     return node
   }
 
-  const installLoopControl = () => {
-    const controls = document.querySelector('.xg-right-grid')
-    if (!controls) return
-    if (controls.querySelector('.dcinema-loop')) {
-      applyLoop()
-      return
+  /**
+   * The feed keeps several players mounted (previous / current / next slide), each
+   * with its own `.xg-right-grid`. Only the current player's bar is on screen, so
+   * the switch has to go there — inserting into the first match puts it inside an
+   * off-screen player that sits under our own top bar.
+   */
+  const loopTargetGrid = () => {
+    const current = visibleVideo()
+    if (current) {
+      const player = current.v.closest('.xgplayer') || current.v.closest('.xgpUb0ay')
+      const grid = player ? player.querySelector('.xg-right-grid') : null
+      if (grid) return grid
     }
-    const anchor = controls.querySelector('.xgplayer-autoplay-setting')
-    if (!anchor) return
-    anchor.insertAdjacentElement('afterend', buildLoopControl(anchor))
+    return (
+      [...document.querySelectorAll('.xg-right-grid')].find((grid) => {
+        const rect = grid.getBoundingClientRect()
+        return rect.width > 100 && rect.height > 0 && rect.top > innerHeight * 0.5 && rect.top < innerHeight
+      }) || null
+    )
+  }
+
+  const installLoopControl = () => {
+    const controls = loopTargetGrid()
+    // Drop copies left behind in other players' bars.
+    for (const stale of document.querySelectorAll('.dcinema-loop')) {
+      if (!controls || stale.parentElement !== controls) stale.remove()
+    }
+    if (!controls) return
+    if (!controls.querySelector('.dcinema-loop')) {
+      const anchor = controls.querySelector('.xgplayer-autoplay-setting')
+      if (!anchor) return
+      anchor.insertAdjacentElement('afterend', buildLoopControl(anchor))
+    }
     applyLoop()
   }
 
