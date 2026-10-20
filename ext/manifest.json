@@ -1,0 +1,66 @@
+{
+  "manifest_version": 3,
+  "name": "Douyin Cinema UI",
+  "version": "0.2.1",
+  "description": "抖音网页版界面重写（影院式）+ 无水印视频下载",
+  "minimum_chrome_version": "111",
+  "permissions": [
+    "downloads",
+    "storage",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": [
+    "*://*.douyin.com/*",
+    "*://*.douyinvod.com/*",
+    "*://*.byteimg.com/*",
+    "*://*.douyinpic.com/*",
+    "*://*.bytecdn.cn/*",
+    "*://*.ibytedtos.com/*",
+    "*://*.douyincdn.com/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "download",
+        "enabled": false,
+        "path": "rules/download.json"
+      }
+    ]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.douyin.com/*"
+      ],
+      "js": [
+        "content/boot.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://*.douyin.com/*"
+      ],
+      "js": [
+        "content/page-hook.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://*.douyin.com/*"
+      ],
+      "js": [
+        "content/content.js"
+      ],
+      "css": [
+        "content/style.css"
+      ],
+      "run_at": "document_end"
+    }
+  ]
+}

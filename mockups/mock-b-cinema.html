@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>方案 B · Cinema（影院深色 · 沉浸式）</title>
+<style>
+  :root {
+    --bg: #000000;
+    --layer-1: #0d0d0f;
+    --layer-2: #16161a;
+    --border: rgba(255, 255, 255, .09);
+    --text-1: #f5f5f7;
+    --text-2: #a1a1aa;
+    --text-3: #6b6b73;
+    --red: #fe2c55;
+    --cyan: #25f4ee;
+    --font: "PingFang SC", "Microsoft YaHei UI", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text-1); font: 14px/1.6 var(--font); overflow: hidden; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+  /* ---------- 悬浮顶部导航（hover 才实体化） ---------- */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 30;
+    display: flex; align-items: center; gap: 18px; padding: 0 22px;
+    background: linear-gradient(rgba(0,0,0,.55), transparent);
+    transition: background .2s ease, border-color .2s ease;
+    border-bottom: 1px solid transparent;
+  }
+  header:hover { background: rgba(10,10,12,.92); border-bottom-color: var(--border); backdrop-filter: blur(14px); }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; letter-spacing: .3px; }
+  .logo b { font-size: 17px; }
+  .logo em { font-style: normal; font-size: 10px; color: var(--cyan); border: 1px solid rgba(37,244,238,.4); padding: 0 5px; border-radius: 4px; }
+  nav { display: flex; gap: 2px; opacity: .22; transition: opacity .2s ease; }
+  header:hover nav { opacity: 1; }
+  nav a { padding: 6px 12px; border-radius: 6px; color: var(--text-2); text-decoration: none; font-size: 13.5px; }
+  nav a.on { color: #fff; background: rgba(255,255,255,.1); }
+  nav a:hover { color: #fff; }
+  .search { margin-left: auto; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 999px; background: rgba(255,255,255,.07); width: 220px; opacity: .25; transition: opacity .2s ease; }
+  header:hover .search { opacity: 1; }
+  .search input { background: none; border: 0; outline: 0; color: var(--text-1); font: inherit; flex: 1; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--cyan), var(--red)); }
+
+  /* ---------- 舞台 ---------- */
+  .stage { position: fixed; inset: 0; background: #000; }
+  .video { position: absolute; inset: 0; background: radial-gradient(circle at 50% 42%, #1a2430, #05070a 72%); overflow: hidden; }
+  .frame { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #cfd6de; font-size: 13px; letter-spacing: .6px; }
+  .frame .tc { position: absolute; right: 22px; top: 68px; font-variant-numeric: tabular-nums; color: var(--text-3); font-size: 12px; }
+  .frame .ai { position: absolute; left: 16px; top: 14px; font-size: 11.5px; color: var(--text-2); border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+
+  /* ---------- 极简控制条：默认半隐，hover 全显 ---------- */
+  .controls { position: absolute; left: 0; right: 0; bottom: 54px; padding: 18px 26px 16px; background: linear-gradient(transparent, rgba(0,0,0,.9)); opacity: .55; transition: opacity .2s ease; z-index: 26; }
+  .video:hover .controls { opacity: 1; }
+  .progress { height: 18px; display: flex; align-items: center; cursor: pointer; }
+  .track { position: relative; height: 3px; width: 100%; background: rgba(255,255,255,.2); border-radius: 999px; transition: height .12s ease; }
+  .progress:hover .track { height: 5px; }
+  .played { position: absolute; inset: 0 auto 0 0; width: 12%; background: linear-gradient(90deg, var(--cyan), var(--red)); border-radius: 999px; }
+  .knob { position: absolute; top: 50%; left: 12%; width: 12px; height: 12px; margin-left: -6px; transform: translateY(-50%); border-radius: 50%; background: #fff; opacity: 0; transition: opacity .12s ease; }
+  .progress:hover .knob { opacity: 1; }
+  .row { display: flex; align-items: center; gap: 16px; margin-top: 8px; font-size: 12.5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .row .spacer { margin-left: auto; }
+  .row button { color: var(--text-2); }
+  .row button:hover { color: #fff; }
+  .seeking { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,.66); border: 1px solid var(--border); color: #fff; font-size: 12.5px; padding: 5px 14px; border-radius: 999px; opacity: 0; transition: opacity .18s ease; }
+
+  /* ---------- 右侧竖排互动条 ---------- */
+  .rail { position: fixed; right: 24px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 20px; z-index: 25; }
+  .act { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-2); font-size: 11.5px; }
+  .act .ic { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; transition: background .15s ease, transform .15s ease; }
+  .act:hover .ic { background: rgba(255,255,255,.16); transform: scale(1.06); }
+
+  .act .av { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #7dd3fc, #fe2c55); }
+
+  /* ---------- 左下角信息（作者 + 标题） ---------- */
+  .info { position: fixed; left: 28px; bottom: 148px; max-width: 560px; z-index: 25; }
+  .info h1 { margin: 0 0 6px; font-size: 20px; line-height: 1.35; font-weight: 600; text-shadow: 0 1px 12px rgba(0,0,0,.6); }
+  .info .by { display: flex; align-items: center; gap: 8px; color: var(--text-2); font-size: 12.5px; }
+  .follow { border: 1px solid var(--red); color: var(--red); border-radius: 999px; padding: 2px 12px; font-size: 12px; }
+  .follow.on { background: var(--red); color: #fff; }
+  .tags { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .tags a { color: var(--cyan); font-size: 12.5px; text-decoration: none; opacity: .85; }
+
+  /* ---------- 底部评论抽屉 ---------- */
+  .drawer { position: fixed; left: 0; right: 0; bottom: 0; height: 54px; background: rgba(12,12,14,.94); border-top: 1px solid var(--border); backdrop-filter: blur(16px); z-index: 28; transition: height .24s cubic-bezier(.4,0,.2,1); }
+  .drawer.open { height: 320px; }
+  .drawer .bar { height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 24px; cursor: pointer; color: var(--text-2); font-size: 13px; }
+  .drawer .bar b { color: var(--text-1); }
+  .drawer .grip { width: 34px; height: 4px; border-radius: 999px; background: rgba(255,255,255,.2); margin-right: 6px; }
+  .drawer .input { margin-left: auto; width: 260px; height: 32px; border-radius: 999px; background: rgba(255,255,255,.07); display: flex; align-items: center; padding: 0 14px; color: var(--text-3); font-size: 12.5px; }
+  .clist { padding: 4px 24px 16px; max-height: 250px; overflow: auto; }
+  .comment { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.05); }
+  .comment .av { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #334155, #0f172a); flex: none; }
+  .comment b { font-size: 12.5px; color: var(--text-1); }
+  .comment small { color: var(--text-3); font-size: 11.5px; }
+  .comment p { margin: 2px 0 0; font-size: 13px; color: var(--text-2); }
+
+  .hint { position: fixed; left: 28px; bottom: 26px; color: var(--text-3); font-size: 11.5px; z-index: 26; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><b>抖音</b><em>dark</em></div>
+  <nav>
+    <a class="on" href="#">推荐</a><a href="#">关注</a><a href="#">朋友</a><a href="#">我的</a>
+  </nav>
+  <div class="search">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.4" stroke="#a1a1aa" stroke-width="1.3"/><path d="M10.4 10.4 14 14" stroke="#a1a1aa" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <input placeholder="搜索你感兴趣的内容" />
+  </div>
+  <div class="avatar"></div>
+</header>
+
+<div class="stage">
+  <div class="video">
+    <div class="frame">
+      <span id="frameText">旧金山 · 金门大桥 · 27s</span>
+      <span class="tc" id="timecode">00:27 / 03:56</span>
+      <span class="ai">AI 生成内容</span>
+    </div>
+    <div class="seeking" id="seeking">跳转中…</div>
+    <div class="controls">
+      <div class="progress" id="progress">
+        <div class="track"><div class="played" id="played"></div><div class="knob" id="knob"></div></div>
+      </div>
+      <div class="row">
+        <button id="playBtn">▶</button>
+        <span id="clock">00:27 / 03:56</span>
+        <button>1.0×</button>
+        <button>画质 1080P</button>
+        <span class="spacer"></span>
+        <button>音量 10%</button>
+        <button>画中画</button>
+        <button>全屏</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="info">
+  <h1>旧金山一日游路线｜从金门大桥到渔人码头</h1>
+  <div class="by">
+    <span>@旅行的小林</span>
+    <span>·</span><span>128.4 万粉丝</span>
+    <button class="follow" id="follow">关注</button>
+  </div>
+  <div class="tags">
+    <a href="#">#旧金山</a><a href="#">#金门大桥</a><a href="#">#一日游</a><a href="#">#城市漫步</a>
+  </div>
+</div>
+
+<div class="rail">
+
+  <div class="act"><div class="ic">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v11H9l-5 4V5Z"/></svg>
+  </div><span>3421</span></div>
+
+  <div class="act"><div class="ic">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12v7h16v-7M12 4v10M8 8l4-4 4 4"/></svg>
+  </div><span>分享</span></div>
+  <div class="act"><div class="av"></div><span>作者</span></div>
+</div>
+
+<div class="drawer" id="drawer">
+  <div class="bar" id="drawerBar">
+    <span class="grip"></span>
+    <b>评论 3421</b><span>· 点击展开</span>
+    <div class="input">说点什么…</div>
+  </div>
+  <div class="clist">
+    <div class="comment"><div class="av"></div><div><b>阿橙</b> <small>2 小时前</small><p>第 3 个点位的咖啡店叫什么？想去</p></div></div>
+    <div class="comment"><div class="av"></div><div><b>海边的卡夫卡</b> <small>3 小时前</small><p>这个路线走下来大概要一天吧，腿会废</p></div></div>
+    <div class="comment"><div class="av"></div><div><b>小林同学</b> <small>5 小时前</small><p>这路线看着真不错，下个月就去</p></div></div>
+  </div>
+</div>
+
+<div class="hint">B 方案要点：视频最大化 · 信息层叠在画面上 · 评论/详情收进抽屉 · 导航默认隐去</div>
+
+<script>
+  const DURATION = 236;
+  let current = 27;
+  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  const played = document.getElementById('played');
+  const knob = document.getElementById('knob');
+  const seeking = document.getElementById('seeking');
+  const timecode = document.getElementById('timecode');
+  const clock = document.getElementById('clock');
+  const frameText = document.getElementById('frameText');
+
+  function paint() {
+    const ratio = current / DURATION;
+    played.style.width = `${ratio * 100}%`;
+    knob.style.left = `${ratio * 100}%`;
+    const text = `${fmt(current)} / ${fmt(DURATION)}`;
+    timecode.textContent = text;
+    clock.textContent = text;
+  }
+
+  document.getElementById('progress').addEventListener('pointerdown', (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    current = ratio * DURATION;
+    paint();
+    seeking.style.opacity = '1';
+    clearTimeout(window.__seekTimer);
+    window.__seekTimer = setTimeout(() => {
+      frameText.textContent = `已跳转至 ${fmt(current)} 的画面`;
+      seeking.style.opacity = '0';
+    }, 1600);
+  });
+
+  document.getElementById('playBtn').addEventListener('click', (e) => {
+    e.currentTarget.textContent = e.currentTarget.textContent === '▶' ? '⏸' : '▶';
+  });
+  document.getElementById('follow').addEventListener('click', (e) => {
+    e.currentTarget.classList.toggle('on');
+    e.currentTarget.textContent = e.currentTarget.classList.contains('on') ? '已关注' : '关注';
+  });
+  document.getElementById('drawerBar').addEventListener('click', () => document.getElementById('drawer').classList.toggle('open'));
+
+  paint();
+</script>
+</body>
+</html>

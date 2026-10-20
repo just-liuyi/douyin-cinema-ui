@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>抖音 UI 重写 · 方案选择</title>
+<style>
+  :root { --ink:#141414; --ink-2:#5c5a55; --ink-3:#8d8a83; --line:#e7e3da; --paper:#fbfaf7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:14px/1.7 "PingFang SC","Microsoft YaHei UI","Segoe UI",system-ui,sans-serif; padding:40px; }
+  h1 { font-size:26px; margin:0 0 6px; }
+  p.lead { color:var(--ink-2); margin:0 0 28px; max-width:70ch; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; max-width:1200px; }
+  a.card { display:block; background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px; text-decoration:none; color:inherit; transition:transform .15s ease, box-shadow .15s ease; }
+  a.card:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(20,20,20,.08); }
+  .tag { font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+  .card h2 { font-size:19px; margin:6px 0 8px; }
+  .card p { margin:0; color:var(--ink-2); font-size:13.5px; }
+  .swatch { display:flex; gap:6px; margin-top:14px; }
+  .swatch i { width:22px; height:22px; border-radius:6px; border:1px solid rgba(0,0,0,.06); }
+  .note { margin-top:30px; color:var(--ink-3); font-size:12.5px; max-width:80ch; }
+  code { background:#f1eee7; padding:1px 6px; border-radius:5px; font-size:12.5px; }
+</style>
+</head>
+<body>
+  <h1>抖音 Web UI 重写 · 三个风格方向</h1>
+  <p class="lead">每个页面都是独立 HTML，自带可点的模拟播放器：<strong>点击进度条</strong>可以体验「进度条跟手 → 跳转中… → 约 1.6 秒后画面到位」的交互（这正是真实抖音上要修的那个问题）。</p>
+
+  <div class="grid">
+    <a class="card" href="mock-a-semi-clean.html">
+      <div class="tag">方案 A</div>
+      <h2>Semi Clean</h2>
+      <p>Semi Design 语言：白底、8px 圆角、蓝色主色、紧凑密度。信息分栏清晰，最接近「官方工整版」，改造成本最低。</p>
+      <div class="swatch"><i style="background:#0064fa"></i><i style="background:#f7f8fa"></i><i style="background:#1c1f23"></i><i style="background:#646a73"></i></div>
+    </a>
+
+    <a class="card" href="mock-b-cinema.html">
+      <div class="tag">方案 B</div>
+      <h2>Cinema</h2>
+      <p>影院沉浸式：纯黑背景、视频最大化、导航默认隐去、信息叠在画面上、评论收进底部抽屉。最「刷视频」。</p>
+      <div class="swatch"><i style="background:#000"></i><i style="background:#16161a"></i><i style="background:#fe2c55"></i><i style="background:#25f4ee"></i></div>
+    </a>
+
+    <a class="card" href="mock-c-editorial.html">
+      <div class="tag">方案 C</div>
+      <h2>Editorial</h2>
+      <p>杂志式：米白纸感、衬线大标题、结构化元信息网格、侧栏卡片（作者/编者按/推荐）。信息密度最高，最「可读」。</p>
+      <div class="swatch"><i style="background:#0f766e"></i><i style="background:#fbfaf7"></i><i style="background:#141414"></i><i style="background:#f59e0b"></i></div>
+    </a>
+  </div>
+
+  <p class="note">
+    说明：这三页是<strong>视觉方向样稿</strong>，不含真实数据、不联网、可直接双击打开。<br />
+    也可以混搭，例如：A 的排版 + B 的深色 + C 的标题字号。挑好方向后我们再谈：顶部导航精简到哪几项、右侧栏保留什么、评论如何折叠、播放器控制条范围，以及是否做深色模式。
+  </p>
+</body>
+</html>

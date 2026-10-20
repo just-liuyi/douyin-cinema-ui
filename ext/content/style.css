@@ -1,0 +1,309 @@
+/* Douyin Cinema UI — injected styles.
+   Everything is scoped under html.dcinema so the whole layer can be dropped by
+   removing one class. The top bar is authored here; the rest of the page only
+   gets token overrides, never layout rewrites, so a Douyin redesign cannot blank
+   the page. */
+
+html.dcinema,
+html.dcinema body {
+  background: #000 !important;
+}
+
+html.dcinema .dcinema-hidden {
+  display: none !important;
+}
+
+/* Hidden but still laid out: keeps a real rect so the site's own popovers (for
+   example the 消息 panel) can position themselves when we forward a click. */
+html.dcinema .dcinema-invisible {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+html.dcinema [data-e2e='feed-item'] {
+  background: #000;
+}
+
+/* ============================================================== top bar */
+
+.dcinema-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 18px;
+  z-index: 2147483000;
+  background: rgba(10, 10, 12, 0.96);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px) saturate(140%);
+  font: 14px/1 'PingFang SC', 'Microsoft YaHei UI', 'Segoe UI', system-ui, sans-serif;
+  color: #f5f5f7;
+}
+
+.dcinema-bar-left,
+.dcinema-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.dcinema-bar-sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  flex: none;
+}
+
+/* ---- brand ---- */
+
+.dcinema-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #fff;
+  flex: none;
+}
+
+.dcinema-brand-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.09);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dcinema-brand-name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ---- channel nav ---- */
+
+.dcinema-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.dcinema-nav a {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 13px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.dcinema-nav a:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+}
+
+.dcinema-nav a.on {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-weight: 600;
+}
+
+.dcinema-nav a.on::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #25f4ee, #fe2c55);
+}
+
+/* ---- search (takes the remaining space, stays centered) ---- */
+
+.dcinema-search {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 460px;
+  height: 34px;
+  margin: 0 auto;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.55);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.dcinema-search:focus-within {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dcinema-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+}
+
+.dcinema-search input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ---- video actions: author / comment / share / download ---- */
+
+.dcinema-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dcinema-actions.is-empty {
+  display: none;
+}
+
+.dcinema-pill {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.82);
+  font: 500 12.5px/1 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.dcinema-pill:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.26);
+}
+
+.dcinema-account {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dcinema-me {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dcinema-me:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+/* ============================================================== download */
+
+.dcinema-dl {
+  box-sizing: border-box;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f5f7;
+  font-size: 15px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.dcinema-dl:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.dcinema-dl.busy {
+  border-color: #25f4ee;
+  color: #25f4ee;
+  animation: dcinema-pulse 1s ease-in-out infinite;
+}
+
+@keyframes dcinema-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* ================================================================== toast */
+
+.dcinema-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 84px;
+  transform: translate(-50%, 12px);
+  z-index: 2147483001;
+  max-width: min(560px, 80vw);
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(16, 16, 18, 0.92);
+  color: #f5f5f7;
+  font: 13px/20px 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  backdrop-filter: blur(12px);
+}
+
+.dcinema-toast.on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.dcinema-toast[data-kind='ok'] {
+  border-color: rgba(37, 244, 238, 0.5);
+}
+
+.dcinema-toast[data-kind='warn'] {
+  border-color: rgba(254, 44, 85, 0.6);
+}
+
+/* ================================================ site rail (video actions)
+   Douyin's own author / comment / share rail is reused as-is; only its position
+   is pinned to the right edge and vertically centred. */
+
+html.dcinema .positionBox {
+  top: 50% !important;
+  bottom: auto !important;
+  right: 10px !important;
+  transform: translateY(-50%) !important;
+}

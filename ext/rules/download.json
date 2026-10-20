@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "priority": 2,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "referer", "operation": "set", "value": "https://www.douyin.com/" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||douyinvod.com/",
+      "resourceTypes": ["sub_frame"],
+      "initiatorDomains": ["douyin.com"]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 2,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        { "header": "content-disposition", "operation": "set", "value": "attachment" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||douyinvod.com/",
+      "resourceTypes": ["sub_frame"],
+      "initiatorDomains": ["douyin.com"]
+    }
+  }
+]
