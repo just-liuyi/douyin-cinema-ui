@@ -238,10 +238,10 @@
         event.stopPropagation()
         const id = activeAwemeId()
         if (!id) {
-          toast('未取到当前视频编号，请先让视频播放一下', 'warn')
+          toast('未取到当前内容编号，请先让它出现在画面上', 'warn')
           return
         }
-        location.href = `/video/${id}`
+        location.href = currentKind() === 'note' ? `/note/${id}` : `/video/${id}`
       },
       true,
     )
@@ -252,7 +252,7 @@
   const renderBarActions = () => {
     const cluster = document.querySelector('.dcinema-actions')
     if (!cluster) return
-    if (!visibleVideo()) {
+    if (!hasActiveItem()) {
       cluster.textContent = ''
       return
     }
@@ -571,14 +571,23 @@
     const candidates = [document.querySelector('[data-e2e="feed-active-video"]'), onScreen].filter(Boolean)
     for (const node of candidates) {
       let current = node
-      for (let depth = 0; current && depth < 8; depth += 1) {
-        const match = String(current.className || '').match(/video_(\d+)/)
+      for (let depth = 0; current && depth < 10; depth += 1) {
+        const match = String(current.className || '').match(/(?:video|note|image|aweme)_(\d+)/)
         if (match) return match[1]
         current = current.parentElement
       }
     }
-    return ''
+    // Detail routes carry the id in the path; search modals carry modal_id.
+    const fromPath = location.pathname.match(/\/(?:video|note)\/(\d+)/)
+    if (fromPath) return fromPath[1]
+    return new URL(location.href).searchParams.get('modal_id') || ''
   }
+
+  /** `note` when the current page/item is an image post, `video` otherwise. */
+  const currentKind = () => (location.pathname.startsWith('/note/') ? 'note' : 'video')
+
+  /** True when there is something on screen the bar can act on. */
+  const hasActiveItem = () => Boolean(visibleVideo()) || Boolean(activeAwemeId())
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -696,6 +705,73 @@
   let busy = false
 
   /**
+   * Image notes have no mp4: the watermark-free assets live in the aweme JSON as
+   * `images[].url_list`, with a DOM fallback (widest variant of each picture).
+   */
+  const resolveNoteImages = async () => {
+    const id = activeAwemeId()
+    const fromPage = await askPage()
+    const item = (fromPage.items || []).find(
+      (entry) => entry.awemeId === id && Array.isArray(entry.imageUrls) && entry.imageUrls.length > 0,
+    )
+    if (item) return { title: item.desc || item.author || 'note', images: item.imageUrls }
+
+    if (currentKind() !== 'note') return null
+
+    // Scope matters: the note's own gallery lives in [data-e2e="note-detail"].
+    // Each slide renders the picture twice (plus a blurred backdrop), so dedupe
+    // by path and keep the widest variant.
+    const scope =
+      document.querySelector('[data-e2e="note-detail"]') ||
+      document.querySelector('[data-e2e="feed-active-video"]') ||
+      document
+    const widest = new Map()
+    for (const img of scope.querySelectorAll('img')) {
+      const src = img.getAttribute('src') || ''
+      if (!/douyinpic|byteimg/.test(src)) continue
+      const rect = img.getBoundingClientRect()
+      if (rect.width < 380) continue
+      const key = src.split('?')[0].split('/').pop().slice(0, 48)
+      const previous = widest.get(key)
+      if (!previous || rect.width > previous.width) {
+        widest.set(key, { src: src.replace(/^\/\//, 'https://'), width: rect.width })
+      }
+    }
+    const images = [...widest.values()].map((entry) => entry.src)
+    if (images.length === 0) return null
+
+    const heading =
+      scope.querySelector('h1')?.textContent?.trim() ||
+      [...scope.querySelectorAll('p, span')]
+        .map((el) => (el.children.length === 0 ? (el.textContent || '').trim() : ''))
+        .find((text) => text.length > 8) ||
+      ''
+    const title = (document.title || '').replace(/ - 抖音.*$/, '').trim() || heading || 'note'
+    return { title, images }
+  }
+
+  const downloadNoteImages = async (note) => {
+    let started = 0
+    for (const [index, url] of note.images.entries()) {
+      // Note pictures are served as .webp today; keep the real extension.
+      const extension = /\.webp(\?|$)/i.test(url) ? 'webp' : 'jpg'
+      const response = await chrome.runtime.sendMessage({
+        type: 'download',
+        url,
+        title: `${note.title}-${index + 1}`,
+        index: index + 1,
+        ext: extension,
+      })
+      if (response && response.ok) started += 1
+    }
+    if (started > 0) {
+      toast(`已开始下载 ${started} 张图片`, 'ok')
+      return true
+    }
+    return false
+  }
+
+  /**
    * Browser-native download: a hidden 1×1 iframe navigates to the CDN URL while
    * the `download` ruleset adds the Referer the CDN wants and rewrites the
    * response to an attachment. Nothing is fetched into JS memory and no CORS
@@ -740,6 +816,14 @@
     button.classList.add('busy')
 
     try {
+      // Image notes first: they have pictures, not a stream.
+      const note = await resolveNoteImages()
+      if (note) {
+        const ok = await downloadNoteImages(note)
+        if (!ok) toast('图片下载失败：地址可能已过期，请刷新后重试', 'warn')
+        return
+      }
+
       const candidates = await resolveSource()
       if (candidates.length === 0) {
         toast('取不到视频地址：请先让这条视频播放一下再点下载', 'warn')
@@ -771,7 +855,6 @@
         return
       }
 
-      // No ruleset support: let the browser try the URL directly.
       const fallback = await chrome.runtime.sendMessage({
         type: 'download',
         url: candidate.url,
@@ -811,8 +894,9 @@
       if (!cluster || !cluster.contains(button)) button.remove()
     }
     if (!cluster) return
-    // Only offer the download when a video is actually on screen.
-    if (!visibleVideo()) {
+    // Offer the download whenever there is something on screen to save (a video
+    // or an image note).
+    if (!hasActiveItem()) {
       for (const button of cluster.querySelectorAll('.dcinema-dl')) button.remove()
       return
     }

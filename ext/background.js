@@ -60,7 +60,7 @@ function scheduleRelease(delayMs = 20_000) {
 }
 
 /** Turn an arbitrary title into a safe, readable mp4 file name. */
-function fileNameOf(raw, index) {
+function fileNameOf(raw, index, ext = 'mp4') {
   const base = String(raw || '')
     .replace(/[\\/:*?"<>|\r\n\t]/g, ' ')
     .replace(/\s+/g, ' ')
@@ -68,7 +68,8 @@ function fileNameOf(raw, index) {
     .slice(0, 90)
   const stem = base || `douyin-${Date.now()}`
   const suffix = Number.isInteger(index) && index > 0 ? `-${index}` : ''
-  return `douyin/${stem}${suffix}.mp4`
+  const extension = typeof ext === 'string' && /^[a-z0-9]{2,5}$/i.test(ext) ? ext : 'mp4'
+  return `douyin/${stem}${suffix}.${extension}`
 }
 
 const isCdnVideo = (url) => typeof url === 'string' && /douyinvod\.com|bytecdn\.cn|ibytedtos\.com|douyincdn\.com/.test(url)
@@ -120,7 +121,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'download') {
     // Legacy path: hand the URL to the browser directly.
     ;(async () => {
-      const filename = fileNameOf(message.title, message.index)
+      const filename = fileNameOf(message.title, message.index, message.ext)
       try {
         const id = await chrome.downloads.download({
           url: message.url,

@@ -37,6 +37,13 @@
   const pickUrl = (addr) => {
     if (!addr) return ''
     if (typeof addr === 'string') return addr.replace(/^\/\//, 'https://')
+    if (Array.isArray(addr)) {
+      for (const entry of addr) {
+        const candidate = pickUrl(entry)
+        if (candidate) return candidate
+      }
+      return ''
+    }
     const list = addr.url_list || addr.urlList
     if (Array.isArray(list) && list.length > 0) return String(list[0]).replace(/^\/\//, 'https://')
     if (typeof addr.uri === 'string' && /^https?:/.test(addr.uri)) return addr.uri
@@ -53,22 +60,37 @@
     if (typeof node !== 'object') return
 
     const video = node.video
-    if (video && typeof video === 'object') {
-      const playUrl = pickUrl(video.play_addr) || pickUrl(video.playAddr) || pickUrl(video.download_addr)
-      if (playUrl) {
-        const awemeId = String(node.aweme_id || node.awemeId || node.group_id || node.groupId || '')
-        const desc = String(node.desc || node.title || node.caption || '')
-        const author =
-          (node.author && (node.author.nickname || node.author.name)) ||
-          (node.authorInfo && node.authorInfo.nickname) ||
-          ''
-        const key = awemeId || playUrl
-        const existing = items.findIndex((entry) => (entry.awemeId || entry.playUrl) === key)
-        const record = { playUrl, desc, author: String(author || ''), awemeId, at: Date.now() }
-        if (existing >= 0) items[existing] = record
-        else items.unshift(record)
-        if (items.length > MAX) items.length = MAX
+    const imageList = Array.isArray(node.images) ? node.images : Array.isArray(node.image_list) ? node.image_list : null
+
+    // Video notes carry play_addr; image notes carry an images[] array instead.
+    const playUrl = video ? pickUrl(video.play_addr) || pickUrl(video.playAddr) || pickUrl(video.download_addr) : ''
+    const imageUrls = imageList
+      ? imageList
+          .map((image) => pickUrl(image) || pickUrl(image && (image.url_list ? image : null)))
+          .filter((url) => typeof url === 'string' && url.startsWith('http'))
+      : []
+
+    if (playUrl || imageUrls.length > 0) {
+      const awemeId = String(node.aweme_id || node.awemeId || node.group_id || node.groupId || '')
+      const desc = String(node.desc || node.title || node.caption || '')
+      const author =
+        (node.author && (node.author.nickname || node.author.name)) ||
+        (node.authorInfo && node.authorInfo.nickname) ||
+        ''
+      const key = awemeId || playUrl || imageUrls[0]
+      const record = {
+        playUrl,
+        imageUrls,
+        kind: imageUrls.length > 0 && !playUrl ? 'note' : 'video',
+        desc,
+        author: String(author || ''),
+        awemeId,
+        at: Date.now(),
       }
+      const existing = items.findIndex((entry) => (entry.awemeId || entry.playUrl) === key)
+      if (existing >= 0) items[existing] = record
+      else items.unshift(record)
+      if (items.length > MAX) items.length = MAX
     }
 
     for (const value of Object.values(node)) {
