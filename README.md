@@ -13,8 +13,10 @@
 | 播放 | 左右铺满（横屏裁切、竖屏完整）、修复进度条点击跳转、`←`/`→` 键 ±5 秒 |
 | 精简 | 隐藏点赞 / 收藏 / 听抖音 / 更多、AI 气泡、下载 App 促销、识别画面、投稿等入口 |
 | 右侧竖排 | 复用抖音原生动作条，仅改为贴右边 + 垂直居中 |
-| 下载 | 浏览器原生流式下载（隐藏 iframe + DNR），文件名 `douyin/<作者>-<描述>.mp4` |
+| 下载 | 视频：浏览器原生流式下载（隐藏 iframe + DNR），`douyin/<作者>-<描述>.mp4`；图文：逐张保存 `douyin/<标题>-N.webp` |
+| 详情 | 顶栏「详情」按钮跳转 `/video/<id>` 或 `/note/<id>` |
 | 首屏 | `document_start` 阶段遮蔽，刷新时不会先闪出原页面 |
+| 图标 | `ext/icons/` 下的 16/32/48/128 PNG 与同款 SVG |
 
 ## 安装
 
@@ -28,9 +30,10 @@
 
 ```
 ext/
-├── manifest.json          MV3 清单
+├── manifest.json          MV3 清单（含 icons）
 ├── background.js          下载执行 + 会话 DNR 规则集开关 + 文件命名
 ├── rules/download.json    让 CDN 放行的静态规则（referer / content-disposition）
+├── icons/                 扩展图标（16/32/48/128 PNG + 同款 SVG）
 ├── content/
 │   ├── boot.js            document_start：首屏遮蔽（防闪烁）
 │   ├── page-hook.js       主世界：网络捕获 + aweme JSON 解析（取无水印地址）
@@ -58,7 +61,7 @@ mockups/                   设计探索用的静态样稿（可直接双击打�
 
 - 抖音发版可能使某些选择器失效；关键改动都集中在 `content.js` 的若干 `trim*`/`build*` 函数里，便于快速修复
 - 下载地址有时效（CDN 签名），需在视频正在播放时点击
-- 不处理直播、图文、付费内容
+- 不处理直播与付费内容
 
 ## 免责声明
 
