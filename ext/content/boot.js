@@ -52,6 +52,27 @@
     }
   `
 
+  // Warm up the connections the first paint depends on: their DNS + TLS setup
+  // otherwise lands right in the critical path of the first images and the video.
+  const PRECONNECT = [
+    'https://lf-douyin-pc-web.douyinstatic.com',
+    'https://p3-pc-sign.douyinpic.com',
+    'https://v26-weba.douyinvod.com',
+  ]
+
+  try {
+    const head = document.head || root
+    for (const origin of PRECONNECT) {
+      const link = document.createElement('link')
+      link.rel = 'preconnect'
+      link.href = origin
+      link.crossOrigin = 'anonymous'
+      head.appendChild(link)
+    }
+  } catch {
+    /* hints only */
+  }
+
   try {
     const style = document.createElement('style')
     style.id = 'dcinema-boot-css'

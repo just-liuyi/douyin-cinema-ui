@@ -908,30 +908,67 @@
   }
 
   // ------------------------------------------------------------------- boot
+  const HEAVY_INTERVAL_MS = 400
+  let lastHeavyAt = 0
+
   const boot = () => {
     installSeekFix()
     document.documentElement.classList.add('dcinema')
+
     let pending = null
+    let lightPending = false
+
+    /**
+     * Two tiers. The page mutates roughly 20 times per second, and a full text
+     * sweep costs ~1.1 ms over 1200+ elements, so running every sweep on every
+     * batch would burn a few percent of the main thread during scrolling.
+     *
+     * Light work (our own bar and buttons) stays per-frame because it is cheap
+     * and must feel instant; the document-wide sweeps are throttled.
+     */
+    const runHeavy = () => {
+      const now = performance.now()
+      if (now - lastHeavyAt < HEAVY_INTERVAL_MS) return
+      lastHeavyAt = now
+      trimChrome()
+      trimPlayerRail()
+      trimPromo()
+      trimLeftNav()
+    }
+
+    const runLight = () => {
+      lightPending = false
+      if (document.hidden) return
+      buildBar()
+      renderBarActions()
+      trimHeaderIcons()
+      trimPlayerMenu()
+      fitVideos()
+      injectButtons()
+      runHeavy()
+    }
+
     const schedule = () => {
       if (pending) return
       pending = requestAnimationFrame(() => {
         pending = null
-        trimChrome()
-        trimHeaderIcons()
-        trimPlayerRail()
-        trimPromo()
-        trimLeftNav()
-        buildBar()
-        renderBarActions()
-        trimPlayerMenu()
-        fitVideos()
-        injectButtons()
+        if (lightPending) return
+        lightPending = true
+        if (typeof requestIdleCallback === 'function') requestIdleCallback(runLight, { timeout: 200 })
+        else setTimeout(runLight, 0)
       })
     }
+
     schedule()
     const observer = new MutationObserver(schedule)
     observer.observe(document.documentElement, { childList: true, subtree: true })
     setInterval(schedule, 3000)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        lastHeavyAt = 0
+        schedule()
+      }
+    })
   }
 
   if (document.readyState === 'loading') {
