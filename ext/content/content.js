@@ -357,10 +357,14 @@
         'click',
         (event) => {
           event.preventDefault()
-          const entry =
+          // The outer [data-e2e="im-entry"] wrapper is inert: the click handler
+          // lives on its inner "something-button" node (verified by toggling the
+          // panel through both; only the inner one opens it).
+          const target =
+            document.querySelector('[data-e2e="im-entry"] [data-e2e="something-button"]') ||
             document.querySelector('[data-e2e="im-entry"]') ||
-            siteMessageEntry()?.parentElement?.parentElement
-          forwardClick(entry)
+            siteMessageEntry()?.parentElement
+          forwardClick(target)
         },
         true,
       )
