@@ -220,6 +220,34 @@
     return [(comment?.textContent || '').trim(), (share?.textContent || '').trim()].join('|')
   }
 
+  const ICON_DETAIL =
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M13.5 5H19v5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5 11 13" stroke-linecap="round"/><path d="M18 14.5V18a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18V7a1.5 1.5 0 0 1 1.5-1.5H9" stroke-linecap="round"/></svg>'
+
+  /** Jumps to the standalone page for the video that is on screen. */
+  const makeDetailButton = () => {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'dcinema-detail'
+    button.title = '进入详情页'
+    button.setAttribute('aria-label', '进入详情页')
+    button.innerHTML = ICON_DETAIL
+    button.addEventListener(
+      'click',
+      (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        const id = activeAwemeId()
+        if (!id) {
+          toast('未取到当前视频编号，请先让视频播放一下', 'warn')
+          return
+        }
+        location.href = `/video/${id}`
+      },
+      true,
+    )
+    return button
+  }
+
   /** The top bar keeps only the download button. */
   const renderBarActions = () => {
     const cluster = document.querySelector('.dcinema-actions')
@@ -228,10 +256,8 @@
       cluster.textContent = ''
       return
     }
-    if (!cluster.querySelector('.dcinema-dl')) {
-      cluster.textContent = ''
-      cluster.appendChild(makeButton())
-    }
+    if (!cluster.querySelector('.dcinema-detail')) cluster.appendChild(makeDetailButton())
+    if (!cluster.querySelector('.dcinema-dl')) cluster.appendChild(makeButton())
   }
 
   const iconButton = (icon, count, title, onClick) => {

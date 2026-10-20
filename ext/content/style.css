@@ -229,7 +229,8 @@ html.dcinema [data-e2e='feed-item'] {
 
 /* ============================================================== download */
 
-.dcinema-dl {
+.dcinema-dl,
+.dcinema-detail {
   box-sizing: border-box;
   width: 30px;
   height: 30px;
@@ -246,7 +247,8 @@ html.dcinema [data-e2e='feed-item'] {
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.dcinema-dl:hover {
+.dcinema-dl:hover,
+.dcinema-detail:hover {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.34);
 }
