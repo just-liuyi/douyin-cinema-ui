@@ -285,9 +285,3 @@ html.dcinema .positionBox {
   right: 10px !important;
   transform: translateY(-50%) !important;
 }
-/* The loop switch clones the site's 连播 entry, which the player dims to 30%.
-   Keep ours fully readable and give it a pointer cursor. */
-html.dcinema .xg-right-grid .dcinema-loop {
-  opacity: 1 !important;
-  cursor: pointer;
-}
