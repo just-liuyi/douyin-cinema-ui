@@ -21,7 +21,6 @@
   ])
 
   /** Social affordances the extension hides. */
-  const HIDE_AFFORDANCE = /点赞|收藏|喜欢|like|collect|favorite/i
 
   const toast = (() => {
     let node = null
@@ -128,28 +127,41 @@
   }
 
   // ------------------------------------------------------------ nav trimming
-  const trimChrome = () => {
-    for (const el of document.querySelectorAll('a, div, span, li, p')) {
-      if (el.children.length > 0) continue
+  /** The header's right-hand cluster (充钻石 / 消息 / 投稿 …), if present. */
+  const headerEntryCluster = () =>
+    [...document.querySelectorAll('div')].find((el) => {
       const text = (el.textContent || '').trim()
-      if (!text) continue
-      if (HIDE_NAV_TEXT.has(text)) (el.closest('a, li') || el).classList.add('dcinema-hidden')
-    }
-    for (const el of document.querySelectorAll('[data-e2e], [aria-label], [title]')) {
-      const probe = `${el.getAttribute('data-e2e') || ''} ${el.getAttribute('aria-label') || ''} ${el.getAttribute('title') || ''}`
-      if (!HIDE_AFFORDANCE.test(probe)) continue
-      if (/^(收藏|点赞)$/.test((el.textContent || '').trim()) || /like|collect|favorite/i.test(el.getAttribute('data-e2e') || '')) {
-        ;(el.closest('[data-e2e], button, a') || el).classList.add('dcinema-hidden')
+      const rect = el.getBoundingClientRect()
+      return (
+        text.includes('充钻石') &&
+        text.includes('消息') &&
+        text.includes('投稿') &&
+        el.children.length >= 4 &&
+        rect.width > 100 &&
+        rect.width < 420
+      )
+    }) || null
+
+  /**
+   * Hide blocklisted entries by their own text.
+   *
+   * Scoped to the navigation column and the header cluster on purpose: a whole-
+   * document sweep also matches ordinary page copy — on the profile grid a card
+   * carrying the word 直播 had its enclosing <a> hidden, which removed the card.
+   */
+  const trimChrome = () => {
+    const scopes = [document.querySelector('[data-e2e="douyin-navigation"]'), headerEntryCluster()].filter(Boolean)
+    for (const scope of scopes) {
+      for (const el of scope.querySelectorAll('a, div, span, li, p')) {
+        if (el.children.length > 0) continue
+        const text = (el.textContent || '').trim()
+        if (!text || !HIDE_NAV_TEXT.has(text)) continue
+        ;(el.closest('a, li') || el).classList.add('dcinema-hidden')
       }
     }
   }
 
   // --------------------------------------------------- video fit
-  /**
-   * Fill the width for landscape clips (a small top/bottom crop) but keep
-   * portrait clips whole — cover on a 9:16 video would show less than a third
-   * of the frame.
-   */
   /**
    * Fill the width only when that costs little: the player box is far wider than
    * tall (about 1.9:1), so `cover` on a 4:3 clip would scale it to 1141px inside a
@@ -566,16 +578,22 @@
   }
 
   // -------------------------------------------------- player rail cleanup
-  /** Hide one item of the vertical action rail: climb to its own small box. */
+  /**
+   * Hide one entry of the player's vertical rail.
+   *
+   * The climb is bounded by the rail itself: an earlier version walked up while
+   * the ancestor was small, which on the profile grid (cards measured 0x0 before
+   * layout) ran past the rail and hid the whole work card — the video then vanished
+   * on hover.
+   */
   const hideRailItem = (el) => {
+    const rail = el.closest('.xg-right-grid, .D0ZulesG, .positionBox, .xgplayer')
+    if (!rail || rail === el) return
     let target = el
-    let node = el
-    for (let depth = 0; depth < 4 && node.parentElement; depth += 1) {
-      node = node.parentElement
-      const rect = node.getBoundingClientRect()
-      if (rect.height > 110 || rect.width > 80) break
-      target = node
-    }
+    while (target.parentElement && target.parentElement !== rail) target = target.parentElement
+    if (target === rail) return
+    // Never hide anything that owns a work card (profile grid / search results).
+    if (target.querySelector('a[href*="/video/"], a[href*="/note/"]')) return
     target.classList.add('dcinema-hidden')
   }
 
