@@ -285,3 +285,122 @@ html.dcinema .positionBox {
   right: 10px !important;
   transform: translateY(-50%) !important;
 }
+
+/* ======================================================= search history
+   The site's own search field keeps an (encrypted) history store, so the bar
+   keeps its own list with per-entry delete and a clear-all action. */
+
+.dcinema-search {
+  position: relative;
+}
+
+.dcinema-history {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 2147483002;
+  padding: 10px 8px 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(16, 16, 20, 0.97);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(18px);
+  font: 13px/1.4 "PingFang SC", "Microsoft YaHei UI", system-ui, sans-serif;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.dcinema-history[hidden] {
+  display: none !important;
+}
+
+.dcinema-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.dcinema-history-clear {
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.55);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.dcinema-history-clear:hover {
+  color: #fe2c55;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dcinema-history-clear[hidden] {
+  display: none !important;
+}
+
+.dcinema-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 268px;
+  overflow: auto;
+}
+
+.dcinema-history-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+}
+
+.dcinema-history-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dcinema-history-word {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.86);
+  font: inherit;
+  text-align: left;
+  padding: 7px 8px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dcinema-history-del {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-right: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dcinema-history-del:hover {
+  background: rgba(254, 44, 85, 0.18);
+  color: #fe2c55;
+}
+
+.dcinema-history-empty {
+  padding: 10px 8px;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 12.5px;
+}

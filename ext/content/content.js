@@ -379,6 +379,13 @@
         <form class="dcinema-search" role="search">
           ${SEARCH_SVG}
           <input type="search" placeholder="搜索你感兴趣的内容" aria-label="搜索" autocomplete="off" />
+          <div class="dcinema-history" hidden>
+            <div class="dcinema-history-head">
+              <span>搜索历史</span>
+              <button type="button" class="dcinema-history-clear" data-act="clear">清除全部</button>
+            </div>
+            <ul class="dcinema-history-list"></ul>
+          </div>
         </form>
         <div class="dcinema-bar-right">
           <div class="dcinema-actions"></div>
@@ -392,10 +399,117 @@
 
       const form = bar.querySelector('.dcinema-search')
       const input = form.querySelector('input')
+      const historyPanel = form.querySelector('.dcinema-history')
+      const historyList = form.querySelector('.dcinema-history-list')
+      const clearAllButton = form.querySelector('[data-act="clear"]')
+
+      const HISTORY_KEY = 'dcinema:search-history'
+      const HISTORY_MAX = 12
+
+      const readHistory = () => {
+        try {
+          const raw = localStorage.getItem(HISTORY_KEY)
+          const parsed = raw ? JSON.parse(raw) : []
+          return Array.isArray(parsed) ? parsed.filter((entry) => typeof entry === 'string' && entry.trim()) : []
+        } catch {
+          return []
+        }
+      }
+
+      const writeHistory = (list) => {
+        try {
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, HISTORY_MAX)))
+        } catch {
+          /* storage is optional */
+        }
+      }
+
+      const rememberQuery = (keyword) => {
+        const value = String(keyword || '').trim()
+        if (!value) return
+        const next = [value, ...readHistory().filter((entry) => entry.toLowerCase() !== value.toLowerCase())]
+        writeHistory(next)
+      }
+
+      const renderHistory = () => {
+        const list = readHistory()
+        historyList.textContent = ''
+        if (list.length === 0) {
+          const empty = document.createElement('li')
+          empty.className = 'dcinema-history-empty'
+          empty.textContent = '暂无搜索历史'
+          historyList.appendChild(empty)
+          clearAllButton.hidden = true
+          return
+        }
+        clearAllButton.hidden = false
+        for (const keyword of list) {
+          const item = document.createElement('li')
+          item.className = 'dcinema-history-item'
+
+          const link = document.createElement('button')
+          link.type = 'button'
+          link.className = 'dcinema-history-word'
+          link.textContent = keyword
+          link.addEventListener('click', () => {
+            rememberQuery(keyword)
+            location.href = `/search/${encodeURIComponent(keyword)}`
+          })
+
+          const remove = document.createElement('button')
+          remove.type = 'button'
+          remove.className = 'dcinema-history-del'
+          remove.title = `删除「${keyword}」`
+          remove.setAttribute('aria-label', `删除「${keyword}」`)
+          remove.textContent = '×'
+          remove.addEventListener('click', (event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            writeHistory(readHistory().filter((entry) => entry !== keyword))
+            renderHistory()
+            if (readHistory().length === 0) historyPanel.hidden = false
+          })
+
+          item.append(link, remove)
+          historyList.appendChild(item)
+        }
+      }
+
+      const openHistory = () => {
+        renderHistory()
+        historyPanel.hidden = false
+      }
+      const closeHistory = () => {
+        historyPanel.hidden = true
+      }
+
+      input.addEventListener('focus', openHistory)
+      input.addEventListener('click', openHistory)
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeHistory()
+      })
+
+      clearAllButton.addEventListener('click', (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        writeHistory([])
+        renderHistory()
+        historyPanel.hidden = false
+        toast('已清空搜索历史', 'ok')
+      })
+
+      document.addEventListener('pointerdown', (event) => {
+        if (!(event.target instanceof Node)) return
+        if (form.contains(event.target)) return
+        closeHistory()
+      }, true)
+
       form.addEventListener('submit', (event) => {
         event.preventDefault()
         const keyword = input.value.trim()
         if (!keyword) return
+        rememberQuery(keyword)
+        closeHistory()
         location.href = `/search/${encodeURIComponent(keyword)}`
       })
       bar.querySelector('[data-role="message"]').addEventListener(
