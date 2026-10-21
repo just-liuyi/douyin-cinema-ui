@@ -5,18 +5,25 @@
     "action": {
       "type": "modifyHeaders",
       "requestHeaders": [
-        { "header": "referer", "operation": "set", "value": "https://www.douyin.com/" }
+        { "header": "referer", "operation": "set", "value": "https://www.douyin.com/" },
+        { "header": "origin", "operation": "set", "value": "https://www.douyin.com" }
       ]
     },
     "condition": {
-      "urlFilter": "||douyinvod.com/",
-      "resourceTypes": ["sub_frame"],
-      "initiatorDomains": ["douyin.com"]
+      "requestDomains": [
+        "douyinvod.com",
+        "bytecdn.cn",
+        "ibytedtos.com",
+        "douyincdn.com",
+        "douyinpic.com",
+        "byteimg.com"
+      ],
+      "resourceTypes": ["sub_frame", "xmlhttprequest", "media", "other", "image"]
     }
   },
   {
     "id": 2,
-    "priority": 2,
+    "priority": 3,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [

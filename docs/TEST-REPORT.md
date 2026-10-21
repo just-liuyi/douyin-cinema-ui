@@ -84,7 +84,7 @@
 
 | 级别 | 问题 | 说明 / 建议 |
 |---|---|---|
-| 中 | **下载"已开始"≠"已完成"** | toast 只表示任务已提交；文件实际在 1–2 秒后才出现。目前没有完成回调，用户可能误判 |
+| 已修 | ~~下载"已开始"≠"已完成"~~ | 改为优先 `chrome.downloads.download`，下载任务出现在 Chrome 下载气泡中；完成/中断由 `downloads.onChanged` 回报，页面提示「下载完成（X MB）」或失败原因 |
 | 中 | **残留 `.crdownload`** | `Downloads\未确认 376191.crdownload`（15:33，242 MB）——某次 iframe 下载的临时文件，未完成且沿用不了建议文件名。建议手动删除；若复现需给 iframe 下载补 `onDeterminingFilename` 的兜底命名 |
 | 中 | **选择器依赖站点结构** | `.positionBox`、`[data-e2e="im-entry"] [data-e2e="something-button"]`、`.xg-right-grid`、`[data-e2e="note-detail"]` 等由抖音提供，改版即失效。失效时优先检查 `content.js` 内对应的 `trim*` / `render*` / `resolve*` 函数 |
 | 低 | **信息流多播放器** | 页面同时挂 3 个播放器（上/当前/下），任何"取第一个匹配"的写法都会踩坑（循环开关曾因此插到屏外）。一律用「当前可见视频 → 其 player」反查 |

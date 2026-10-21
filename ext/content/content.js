@@ -888,12 +888,13 @@
     for (const [index, url] of note.images.entries()) {
       // Note pictures are served as .webp today; keep the real extension.
       const extension = /\.webp(\?|$)/i.test(url) ? 'webp' : 'jpg'
-      const response = await chrome.runtime.sendMessage({
+      const response = await sendDownloadMessage({
         type: 'download',
         url,
         title: `${note.title}-${index + 1}`,
         index: index + 1,
         ext: extension,
+        quiet: true,
       })
       if (response && response.ok) started += 1
     }
@@ -935,6 +936,36 @@
     }, 15000)
 
     return { ok: Boolean(prepared && prepared.ok), filename: (prepared && prepared.filename) || '' }
+  }
+
+  /** sendMessage that never throws when the extension context was reloaded. */
+  const sendDownloadMessage = async (payload) => {
+    try {
+      return await chrome.runtime.sendMessage(payload)
+    } catch (error) {
+      return { ok: false, error: String((error && error.message) || error) }
+    }
+  }
+
+  /** Completion / failure toasts, pushed from the service worker. */
+  const describeBytes = (bytes) => {
+    const value = Number(bytes) || 0
+    if (value <= 0) return ''
+    if (value >= 1048576) return `（${(value / 1048576).toFixed(1)} MB）`
+    return `（${Math.max(1, Math.round(value / 1024))} KB）`
+  }
+
+  try {
+    chrome.runtime.onMessage.addListener((message) => {
+      if (!message || message.type !== 'download-state') return
+      if (message.state === 'complete') {
+        toast(`下载完成：${message.filename}${describeBytes(message.bytes)}`, 'ok')
+      } else if (message.state === 'interrupted') {
+        toast(`下载失败：${message.filename}（${message.error || '已中断'}）`, 'warn')
+      }
+    })
+  } catch {
+    /* the page may be out of the extension's context */
   }
 
   const doDownload = async (event) => {
@@ -982,22 +1013,26 @@
         return
       }
 
-      const result = await startFrameDownload(candidate.url, candidate.title)
-      if (result.ok) {
-        toast(`已开始下载：${result.filename}`, 'ok')
+      // Preferred: a real browser download — it shows up in Chrome's download
+      // bubble, streams to disk and reports completion back to this tab.
+      const direct = await sendDownloadMessage({
+        url: candidate.url,
+        title: candidate.title,
+        ext: 'mp4',
+      })
+      if (direct && direct.ok) {
+        toast(`已开始下载：${direct.filename}`, 'ok')
         return
       }
 
-      const fallback = await chrome.runtime.sendMessage({
-        type: 'download',
-        url: candidate.url,
-        title: candidate.title,
-      })
-      if (fallback && fallback.ok) {
-        toast(`已开始下载：${fallback.filename}`, 'ok')
+      // Fallback: hidden iframe with the DNR content-disposition rewrite.
+      const framed = await startFrameDownload(candidate.url, candidate.title)
+      if (framed.ok) {
+        toast(`已开始下载：${framed.filename}`, 'ok')
         return
       }
-      toast(`下载失败：${(fallback && fallback.error) || '未知错误'}`, 'warn')
+
+      toast(`下载失败：${(direct && direct.error) || '未知错误'}`, 'warn')
     } catch (error) {
       toast(`下载失败：${String((error && error.message) || error)}`, 'warn')
     } finally {

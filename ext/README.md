@@ -33,7 +33,9 @@
 2. **aweme JSON**：同一个包装器顺带解析接口响应里的 `video.play_addr`（同样无水印），带描述与作者，用于精确匹配当前条目。
 3. **DOM 兜底**：`<video>.currentSrc`（非 blob 时）与 `<source src>`。
 
-**下载**（关键：不经过 JS）
+**下载**（优先走浏览器原生任务，关键是不经过 JS）
+
+首选 `chrome.downloads.download({ url, filename })`：会在 Chrome 下载气泡里生成**可见任务**（可暂停/继续/重试），完成后由 service worker 通过 `downloads.onChanged` 回报，页面弹出「下载完成：<文件名>（X MB）」；被中断则提示原因。当 CDN 拒绝这种请求时，才退回到下面的隐藏 iframe 方案。
 
 ```
 content script                     service worker
