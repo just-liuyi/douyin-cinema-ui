@@ -150,14 +150,33 @@
    * portrait clips whole — cover on a 9:16 video would show less than a third
    * of the frame.
    */
+  /**
+   * Fill the width only when that costs little: the player box is far wider than
+   * tall (about 1.9:1), so `cover` on a 4:3 clip would scale it to 1141px inside a
+   * 796px box and cut 173px off the top *and bottom* — which swallows the burned-in
+   * subtitles. Cover is therefore allowed only while the vertical crop stays under
+   * 8%; anything with a bigger mismatch keeps its whole frame.
+   */
+  const MAX_COVER_CROP = 0.08
+
   const fitVideo = (video) => {
     const width = video.videoWidth || 0
     const height = video.videoHeight || 0
     if (!width || !height) return
+
+    const rect = video.getBoundingClientRect()
     const ratio = width / height
-    const mode = ratio >= 1.2 ? 'cover' : 'contain'
+    let mode = 'contain'
+    if (rect.width > 0 && rect.height > 0) {
+      const scale = Math.max(rect.width / width, rect.height / height)
+      const verticalCrop = Math.max(0, height * scale - rect.height) / rect.height
+      mode = ratio >= 1.2 && verticalCrop <= MAX_COVER_CROP ? 'cover' : 'contain'
+    }
+
     if (video.style.objectFit !== mode) video.style.objectFit = mode
-    video.style.objectPosition = 'center center'
+    // Cover still trims a little height; take that trim from the top so burned-in
+    // subtitles near the bottom edge stay inside the frame.
+    video.style.objectPosition = mode === 'cover' ? 'center bottom' : 'center center'
     if (!video.__dcinemaFitBound) {
       video.__dcinemaFitBound = true
       video.addEventListener('loadedmetadata', () => fitVideo(video))

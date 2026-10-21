@@ -88,7 +88,7 @@
 | 中 | **残留 `.crdownload`** | `Downloads\未确认 376191.crdownload`（15:33，242 MB）——某次 iframe 下载的临时文件，未完成且沿用不了建议文件名。建议手动删除；若复现需给 iframe 下载补 `onDeterminingFilename` 的兜底命名 |
 | 中 | **选择器依赖站点结构** | `.positionBox`、`[data-e2e="im-entry"] [data-e2e="something-button"]`、`.xg-right-grid`、`[data-e2e="note-detail"]` 等由抖音提供，改版即失效。失效时优先检查 `content.js` 内对应的 `trim*` / `render*` / `resolve*` 函数 |
 | 低 | **信息流多播放器** | 页面同时挂 3 个播放器（上/当前/下），任何"取第一个匹配"的写法都会踩坑（循环开关曾因此插到屏外）。一律用「当前可见视频 → 其 player」反查 |
-| 低 | **竖屏视频不铺满** | 按设计：横屏 cover、竖屏 contain（竖屏 cover 会只剩约 29% 画面） |
+| 低 | **视频填充策略** | 只在对画面裁切 ≤ 8% 高度时用 cover（并把裁切让给顶部），否则 contain 保全整画面。例：4:3 视频在 1.9:1 的框里若强用 cover 会裁掉 43% 高度、吞掉底部字幕 |
 | 低 | **详情页视频元素瞬时 0 尺寸** | 进入详情页瞬间 `<video>` 高度为 0，`visibleVideo()` 取不到；顶栏按钮靠 `hasActiveItem()`（路径/容器 id）兜底，已验证可用 |
 | 信息 | **冷启动无法显著优化** | 179 个 JS / DCL 2.3s 属抖音自身架构 |
 
