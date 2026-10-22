@@ -731,6 +731,9 @@
         applySidebarState(next)
       })
       row.appendChild(button)
+      // First mount after a page load: restore the stored preference. Later mounts
+      // only re-attach the element, so the live state has to win.
+      applySidebarState(readCollapsed())
     }
     applySidebarState(document.documentElement.classList.contains(COLLAPSED_CLASS))
   }
