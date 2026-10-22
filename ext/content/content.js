@@ -465,7 +465,7 @@
   const makeDetailButton = () => {
     const button = document.createElement('button')
     button.type = 'button'
-    button.className = 'dcinema-detail dcinema-pill'
+    button.className = 'dcinema-detail dcinema-native-item'
     button.title = '进入详情页'
     button.setAttribute('aria-label', '进入详情页')
     button.innerHTML = `${ICON_DETAIL}<span>详情</span>`
@@ -492,7 +492,7 @@
   const makeButton = () => {
     const button = document.createElement('button')
     button.type = 'button'
-    button.className = 'dcinema-dl dcinema-pill'
+    button.className = 'dcinema-dl dcinema-native-item'
     button.title = '下载无水印视频'
     button.innerHTML = `${ICON_DOWNLOAD}<span>下载</span>`
     button.addEventListener('click', doDownload, true)
@@ -684,12 +684,14 @@
   /** Icon + label follow the collapsed state; cheap enough to call every tick. */
   const renderToggle = (button, collapsed) => {
     button.dataset.collapsed = collapsed ? '1' : '0'
-    // Action wording, like 详情 / 下载: the label says what a click will do.
-    const label = collapsed ? '展开侧栏' : '收起侧栏'
+    // Native entries are 32px wide, so the visible label stays two characters;
+    // the tooltip keeps the full sentence.
+    const label = collapsed ? '展开' : '收起'
+    const title = collapsed ? '展开侧栏' : '收起侧栏'
     if (button.dataset.label === label) return
     button.dataset.label = label
-    button.title = label
-    button.setAttribute('aria-label', label)
+    button.title = title
+    button.setAttribute('aria-label', title)
     button.innerHTML = `${collapsed ? ICON_SIDEBAR_EXPAND : ICON_SIDEBAR_COLLAPSE}<span>${label}</span>`
   }
 
@@ -720,7 +722,7 @@
       if (existing) existing.remove()
       button = document.createElement('button')
       button.type = 'button'
-      button.className = 'dcinema-sidebar-toggle dcinema-pill'
+      button.className = 'dcinema-sidebar-toggle dcinema-native-item'
       button.addEventListener('click', (event) => {
         event.preventDefault()
         event.stopPropagation()

@@ -25,45 +25,62 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
-.dcinema-pill {
+/*
+ * Mirrors douyin's own header entries (充钻石 / 客户端 / 壁纸 / 通知 / 消息 / 投稿):
+ * a 32x44 column with a 22px icon over a 10px label in rgba(255,255,255,.6).
+ */
+.dcinema-native-item {
   box-sizing: border-box;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.9);
-  font: 500 12.5px/1 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
-  font-variant-numeric: tabular-nums;
+  justify-content: flex-start;
+  width: 32px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: rgba(255, 255, 255, 0.6);
+  font: 400 10px/20px 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
-.dcinema-pill:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.34);
+.dcinema-native-item:hover {
   color: #fff;
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.dcinema-pill:active {
-  transform: translateY(1px);
+.dcinema-native-item:active {
+  background: rgba(255, 255, 255, 0.12);
 }
 
-.dcinema-pill.busy {
-  border-color: #25f4ee;
-  color: #25f4ee;
-  animation: dcinema-pulse 1s ease-in-out infinite;
+.dcinema-native-item svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
 }
 
-@keyframes dcinema-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.45; }
+.dcinema-native-item span {
+  display: block;
+  line-height: 20px;
 }
 
+.dcinema-native-item.is-idle,
+.dcinema-native-item:disabled {
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+  background: none;
+}
+
+.dcinema-native-item.is-idle:hover,
+.dcinema-native-item:disabled:hover {
+  color: rgba(255, 255, 255, 0.3);
+  background: none;
+}
 /* ----------------------------------------------------------------- toast */
 
 .dcinema-toast {
@@ -109,7 +126,7 @@
   z-index: 12;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
   flex: none;
   pointer-events: auto;
 }
@@ -139,7 +156,7 @@
 .dcinema-sidebar-toggle {
   position: absolute;
   top: 50%;
-  left: 12px;
+  left: 10px;
   transform: translateY(-50%);
   z-index: 12;
   flex: none;
@@ -157,8 +174,8 @@
 
 .dcinema-sidebar-toggle svg {
   flex: none;
-  width: 15px;
-  height: 15px;
+  width: 22px;
+  height: 22px;
 }
 
 /* The header row is authored as `calc(100vw - 160px)`; collapsing the column
