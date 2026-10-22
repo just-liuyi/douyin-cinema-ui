@@ -78,6 +78,51 @@
   }
 
   // ---------------------------------------------------------------- seek fix
+  /**
+   * Douyin's IM conversation rows open on `mousedown` only (the row wrapper binds
+   * onMouseDown and onContextMenu, no onClick). If anything upstream cancels the
+   * pointer sequence, the press never reaches the row and a plain click is silently
+   * ignored — the panel looks alive but no conversation opens.
+   *
+   * A press that does reach the row is left completely alone; the bridge only fires
+   * when the row saw no pointerdown/mousedown for this click.
+   */
+  const bridgeImRowPress = () => {
+    const ROW = '[data-e2e="conversation-item"]'
+    const pressed = new WeakSet()
+
+    const markPressed = (event) => {
+      const row = event.target && event.target.closest ? event.target.closest(ROW) : null
+      if (row) pressed.add(row)
+    }
+
+    document.addEventListener('pointerdown', markPressed, true)
+    document.addEventListener('mousedown', markPressed, true)
+
+    document.addEventListener(
+      'click',
+      (event) => {
+        const row = event.target && event.target.closest ? event.target.closest(ROW) : null
+        if (!row) return
+        if (pressed.has(row)) {
+          pressed.delete(row)
+          return
+        }
+        // The press was swallowed: replay it so the site's onMouseDown sees a click.
+        const rect = row.getBoundingClientRect()
+        const point = {
+          clientX: event.clientX || rect.left + 24,
+          clientY: event.clientY || rect.top + rect.height / 2,
+        }
+        const base = { bubbles: true, cancelable: true, composed: true, button: 0, view: window, ...point }
+        for (const type of ['pointerdown', 'mousedown']) row.dispatchEvent(new PointerEvent(type, { ...base, buttons: 1 }))
+        for (const type of ['pointerup', 'mouseup']) row.dispatchEvent(new PointerEvent(type, { ...base, buttons: 0 }))
+        pressed.delete(row)
+      },
+      true,
+    )
+  }
+
   const installSeekFix = () => {
     document.addEventListener(
       'pointerdown',
@@ -1099,6 +1144,7 @@
 
   const boot = () => {
     installSeekFix()
+    bridgeImRowPress()
     document.documentElement.classList.add('dcinema')
 
     let pending = null
