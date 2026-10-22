@@ -680,10 +680,14 @@
   const CHEVRON_RIGHT =
     '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m9.5 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
-  const placeToggle = (button, collapsed) => {
-    const column = sidebarColumn()
-    const edge = column ? column.getBoundingClientRect().right : 160
-    button.style.left = `${collapsed ? 10 : Math.max(120, Math.round(edge) + 6)}px`
+  /** Icon + label follow the collapsed state; cheap enough to call every tick. */
+  const renderToggle = (button, collapsed) => {
+    button.dataset.collapsed = collapsed ? '1' : '0'
+    const label = collapsed ? '展开侧栏' : '收起侧栏'
+    if (button.title === label) return
+    button.title = label
+    button.setAttribute('aria-label', label)
+    button.innerHTML = collapsed ? CHEVRON_RIGHT : CHEVRON_LEFT
   }
 
 
@@ -692,22 +696,25 @@
     const column = sidebarColumn()
     if (column) column.classList.add('dcinema-sidebar')
     const button = document.querySelector('.dcinema-sidebar-toggle')
-    if (button) {
-      button.innerHTML = collapsed ? CHEVRON_RIGHT : CHEVRON_LEFT
-      button.title = collapsed ? '展开侧栏' : '收起侧栏'
-      button.setAttribute('aria-label', button.title)
-      button.dataset.collapsed = collapsed ? '1' : '0'
-      placeToggle(button, collapsed)
-    }
+    if (button) renderToggle(button, collapsed)
     return collapsed
   }
 
+  /**
+   * The toggle lives in the header row, left of the search field: putting it over
+   * the video covered the picture, and the header is where douyin keeps its own
+   * controls anyway.
+   */
   const mountSidebarToggle = () => {
     const column = sidebarColumn()
-    if (!column) return
+    const row = siteHeaderRow()
+    if (!column || !row) return
     column.classList.add('dcinema-sidebar')
-    let button = document.querySelector('.dcinema-sidebar-toggle')
+
+    let button = row.querySelector('.dcinema-sidebar-toggle')
     if (!button) {
+      const existing = document.querySelector('.dcinema-sidebar-toggle')
+      if (existing) existing.remove()
       button = document.createElement('button')
       button.type = 'button'
       button.className = 'dcinema-sidebar-toggle'
@@ -718,10 +725,9 @@
         writeCollapsed(next)
         applySidebarState(next)
       })
-      document.documentElement.appendChild(button)
-      applySidebarState(readCollapsed())
+      row.appendChild(button)
     }
-    placeToggle(button, document.documentElement.classList.contains(COLLAPSED_CLASS))
+    applySidebarState(document.documentElement.classList.contains(COLLAPSED_CLASS))
   }
 
   // --------------------------------------------------------------- boot

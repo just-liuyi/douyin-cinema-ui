@@ -135,46 +135,46 @@
 
 /* ------------------------------------------------------ sidebar toggle */
 
-/* A drawer-style handle: a tall rounded pill pinned to the side of the nav
-   column, vertically centred on the viewport. */
+/* The toggle lives inside the header row, left of the search field: a floating
+   handle over the video covered the picture. */
 .dcinema-sidebar-toggle {
-  position: fixed;
+  position: absolute;
   top: 50%;
+  left: 12px;
   transform: translateY(-50%);
-  left: 166px;
-  z-index: 2147483002;
+  z-index: 12;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 88px;
+  width: 32px;
+  height: 32px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(38, 38, 44, 0.94), rgba(22, 22, 26, 0.94));
-  color: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.78);
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
-  transition: left 0.18s ease, width 0.15s ease, background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
-  opacity: 0.72;
-  backdrop-filter: blur(12px);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .dcinema-sidebar-toggle:hover {
-  opacity: 1;
-  width: 34px;
-  background: linear-gradient(180deg, rgba(52, 52, 60, 0.98), rgba(30, 30, 36, 0.98));
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
   color: #fff;
 }
 
+.dcinema-sidebar-toggle:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
 .dcinema-sidebar-toggle[data-collapsed='1'] {
-  opacity: 0.82;
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .dcinema-sidebar-toggle svg {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
 }
 
 /* The header row is authored as `calc(100vw - 160px)`; collapsing the column
