@@ -561,40 +561,167 @@
     )
   }
 
-  // ------------------------------------------------------------ buttons
-  const GROUP_CLASS = 'dcinema-actions'
+  // ------------------------------------------------------- header actions
+  /**
+   * The buttons live in douyin's own header, right-aligned like the 消息 entry.
+   * They stay mounted and are disabled instead of disappearing, so the header does
+   * not reflow every time a feed item leaves or enters the viewport; gating is the
+   * same for 详情 and 下载: no active video/note, no action.
+   */
+  const ACTIONS_CLASS = 'dcinema-header-actions'
 
-  const groupHost = () => {
-    const current = visibleVideo()
-    if (current) {
-      const player = current.v.closest('.xgplayer') || current.v.closest('.xgpUb0ay')
-      const bar = player ? player.querySelector('.xg-right-grid') : null
-      if (bar) return { host: bar, floating: false }
-    }
-    return { host: document.body, floating: true }
+  /**
+   * The header row is the first child of the main column, and it is a plain block
+   * (not a flex row), so the buttons are absolutely positioned just left of
+   * douyin's own entry cluster — that keeps them inside the 56px header without
+   * touching the site's layout.
+   */
+  const siteHeaderRow = () => {
+    const layout = document.querySelector('.header-ui')
+    if (!layout) return null
+    const main = [...layout.children].find(
+      (node) => !node.querySelector('[data-e2e="douyin-navigation"]') && getComputedStyle(node).display === 'flex',
+    )
+    return (main && main.firstElementChild) || null
   }
 
-  const ensureGroup = () => {
-    const { host, floating } = groupHost()
-    let group = document.querySelector('.' + GROUP_CLASS)
+  /**
+   * Left edge of the entry cluster that holds 消息 / 投稿, in viewport px.
+   *
+   * Walking up to the row's direct child is wrong: that child spans the whole
+   * header, which would place our buttons at the far left. Stop as soon as the
+   * ancestor is no longer clearly narrower than the row — that is the cluster.
+   */
+  const clusterLeftOf = (row) => {
+    const entry = document.querySelector('[data-e2e="im-entry"]')
+    if (!entry || !row.contains(entry)) return null
+    const rowWidth = row.getBoundingClientRect().width || 1
+    let node = entry
+    while (node.parentElement && row.contains(node.parentElement) && node.parentElement.getBoundingClientRect().width < rowWidth * 0.6) {
+      node = node.parentElement
+    }
+    return node.getBoundingClientRect().left
+  }
+
+  const ensureActions = () => {
+    const row = siteHeaderRow()
+    if (!row) return null
+
+    let group = document.querySelector('.' + ACTIONS_CLASS)
     if (!group) {
       group = document.createElement('div')
-      group.className = GROUP_CLASS
+      group.className = ACTIONS_CLASS
+      group.appendChild(makeDetailButton())
+      group.appendChild(makeButton())
     }
-    group.classList.toggle('dcinema-actions-floating', floating)
-    if (group.parentElement !== host) host.appendChild(group)
+    if (group.parentElement !== row) row.appendChild(group)
+    row.classList.add('dcinema-header-row')
+    if (getComputedStyle(row).position === 'static') row.style.position = 'relative'
+
+    // Sit immediately left of the site's cluster; fall back to a small inset.
+    const rowRect = row.getBoundingClientRect()
+    const clusterLeft = clusterLeftOf(row)
+    const gap = clusterLeft == null ? 12 : Math.max(8, Math.round(rowRect.right - clusterLeft + 10))
+    group.style.right = `${gap}px`
     return group
   }
 
-  const injectActions = () => {
-    if (!hasActiveItem()) {
-      const group = document.querySelector('.' + GROUP_CLASS)
-      if (group) group.remove()
-      return
+  const setActionsEnabled = (group, enabled) => {
+    for (const button of group.querySelectorAll('button')) {
+      button.disabled = !enabled
+      button.classList.toggle('is-idle', !enabled)
+      if (!enabled) button.title = '先让一条视频或图文出现在画面上'
     }
-    const group = ensureGroup()
-    if (!group.querySelector('.dcinema-detail')) group.appendChild(makeDetailButton())
-    if (!group.querySelector('.dcinema-dl')) group.appendChild(makeButton())
+    if (enabled) {
+      const detail = group.querySelector('.dcinema-detail')
+      const download = group.querySelector('.dcinema-dl')
+      if (detail) detail.title = '进入详情页'
+      if (download) download.title = '下载无水印视频'
+    }
+  }
+
+  const injectActions = () => {
+    const group = ensureActions()
+    if (!group) return
+    setActionsEnabled(group, hasActiveItem())
+  }
+  // ------------------------------------------------------ sidebar toggle
+  const SIDEBAR_KEY = 'dcinema:sidebar-collapsed'
+  const COLLAPSED_CLASS = 'dcinema-sidebar-collapsed'
+
+  /** The direct child of `.header-ui` that owns the navigation column. */
+  const sidebarColumn = () => {
+    const layout = document.querySelector('.header-ui')
+    const nav = document.querySelector('[data-e2e="douyin-navigation"]')
+    if (!layout || !nav) return null
+    let node = nav
+    while (node && node.parentElement !== layout) node = node.parentElement
+    return node && node.parentElement === layout ? node : null
+  }
+
+  const readCollapsed = () => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === '1'
+    } catch {
+      return false
+    }
+  }
+
+  const writeCollapsed = (collapsed) => {
+    try {
+      localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0')
+    } catch {
+      /* storage is optional */
+    }
+  }
+
+  const CHEVRON_LEFT =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m14.5 6-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  const CHEVRON_RIGHT =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m9.5 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+
+  const placeToggle = (button, collapsed) => {
+    const column = sidebarColumn()
+    const edge = column ? column.getBoundingClientRect().right : 160
+    button.style.left = `${collapsed ? 10 : Math.max(120, Math.round(edge) + 6)}px`
+  }
+
+
+  const applySidebarState = (collapsed) => {
+    document.documentElement.classList.toggle(COLLAPSED_CLASS, collapsed)
+    const column = sidebarColumn()
+    if (column) column.classList.add('dcinema-sidebar')
+    const button = document.querySelector('.dcinema-sidebar-toggle')
+    if (button) {
+      button.innerHTML = collapsed ? CHEVRON_RIGHT : CHEVRON_LEFT
+      button.title = collapsed ? '展开侧栏' : '收起侧栏'
+      button.setAttribute('aria-label', button.title)
+      button.dataset.collapsed = collapsed ? '1' : '0'
+      placeToggle(button, collapsed)
+    }
+    return collapsed
+  }
+
+  const mountSidebarToggle = () => {
+    const column = sidebarColumn()
+    if (!column) return
+    column.classList.add('dcinema-sidebar')
+    let button = document.querySelector('.dcinema-sidebar-toggle')
+    if (!button) {
+      button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'dcinema-sidebar-toggle'
+      button.addEventListener('click', (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        const next = !document.documentElement.classList.contains(COLLAPSED_CLASS)
+        writeCollapsed(next)
+        applySidebarState(next)
+      })
+      document.documentElement.appendChild(button)
+      applySidebarState(readCollapsed())
+    }
+    placeToggle(button, document.documentElement.classList.contains(COLLAPSED_CLASS))
   }
 
   // --------------------------------------------------------------- boot
@@ -608,6 +735,7 @@
       scheduled = false
       if (document.hidden) return
       injectActions()
+      mountSidebarToggle()
     }
     const schedule = () => {
       if (pending) return
