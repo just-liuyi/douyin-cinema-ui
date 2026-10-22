@@ -135,46 +135,30 @@
 
 /* ------------------------------------------------------ sidebar toggle */
 
-/* The toggle lives inside the header row, left of the search field: a floating
-   handle over the video covered the picture. */
+/* Same pill as 详情 / 下载, positioned left of the search field. */
 .dcinema-sidebar-toggle {
   position: absolute;
   top: 50%;
   left: 12px;
   transform: translateY(-50%);
   z-index: 12;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.78);
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  flex: none;
 }
 
 .dcinema-sidebar-toggle:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.34);
   color: #fff;
 }
 
 .dcinema-sidebar-toggle:active {
-  transform: translateY(-50%) scale(0.96);
-}
-
-.dcinema-sidebar-toggle[data-collapsed='1'] {
-  color: rgba(255, 255, 255, 0.62);
+  transform: translateY(-50%) scale(0.98);
 }
 
 .dcinema-sidebar-toggle svg {
-  width: 17px;
-  height: 17px;
+  flex: none;
+  width: 15px;
+  height: 15px;
 }
 
 /* The header row is authored as `calc(100vw - 160px)`; collapsing the column

@@ -675,19 +675,22 @@
     }
   }
 
-  const CHEVRON_LEFT =
-    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m14.5 6-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-  const CHEVRON_RIGHT =
-    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m9.5 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  /** Panel-with-arrow: collapse (arrow pointing into the panel) / expand. */
+  const ICON_SIDEBAR_COLLAPSE =
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15" stroke-linecap="round"/><path d="m16.5 9.5-3 2.5 3 2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  const ICON_SIDEBAR_EXPAND =
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15" stroke-linecap="round"/><path d="m13 9.5 3 2.5-3 2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
   /** Icon + label follow the collapsed state; cheap enough to call every tick. */
   const renderToggle = (button, collapsed) => {
     button.dataset.collapsed = collapsed ? '1' : '0'
+    // Action wording, like 详情 / 下载: the label says what a click will do.
     const label = collapsed ? '展开侧栏' : '收起侧栏'
-    if (button.title === label) return
+    if (button.dataset.label === label) return
+    button.dataset.label = label
     button.title = label
     button.setAttribute('aria-label', label)
-    button.innerHTML = collapsed ? CHEVRON_RIGHT : CHEVRON_LEFT
+    button.innerHTML = `${collapsed ? ICON_SIDEBAR_EXPAND : ICON_SIDEBAR_COLLAPSE}<span>${label}</span>`
   }
 
 
@@ -717,7 +720,7 @@
       if (existing) existing.remove()
       button = document.createElement('button')
       button.type = 'button'
-      button.className = 'dcinema-sidebar-toggle'
+      button.className = 'dcinema-sidebar-toggle dcinema-pill'
       button.addEventListener('click', (event) => {
         event.preventDefault()
         event.stopPropagation()
