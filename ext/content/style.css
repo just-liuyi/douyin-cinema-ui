@@ -135,20 +135,6 @@
   display: none;
 }
 
-.dcinema-pill.is-idle,
-.dcinema-pill:disabled {
-  opacity: 0.42;
-  cursor: not-allowed;
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.dcinema-pill.is-idle:hover,
-.dcinema-pill:disabled:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
-}
 
 /* ------------------------------------------------------ sidebar toggle */
 
