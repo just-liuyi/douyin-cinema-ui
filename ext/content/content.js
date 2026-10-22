@@ -458,37 +458,13 @@
       button.classList.remove('busy')
     }
   }
+  // Icons follow douyin's own header glyphs: a 24x24 viewBox rendered at 22px,
+  // solid `currentColor` fills (their glyphs are filled outlines, not strokes), so
+  // the pair reads at the same visual weight as 充钻石 / 通知 / 投稿.
   const ICON_DETAIL =
-    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M13.5 5H19v5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5 11 13" stroke-linecap="round"/><path d="M18 14.5V18a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18V7a1.5 1.5 0 0 1 1.5-1.5H9" stroke-linecap="round"/></svg>'
-
-  /** Jumps to the standalone page for the video that is on screen. */
-  const makeDetailButton = () => {
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.className = 'dcinema-detail dcinema-native-item'
-    button.title = '进入详情页'
-    button.setAttribute('aria-label', '进入详情页')
-    button.innerHTML = `${ICON_DETAIL}<span>详情</span>`
-    button.addEventListener(
-      'click',
-      (event) => {
-        event.preventDefault()
-        event.stopPropagation()
-        const id = activeAwemeId()
-        if (!id) {
-          toast('未取到当前内容编号，请先让它出现在画面上', 'warn')
-          return
-        }
-        location.href = currentKind() === 'note' ? `/note/${id}` : `/video/${id}`
-      },
-      true,
-    )
-    return button
-  }
-
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M7.25 3.5h7.1a2.5 2.5 0 0 1 1.77.73l1.65 1.65a2.5 2.5 0 0 1 .73 1.77v10.6a2.25 2.25 0 0 1-2.25 2.25h-9A2.25 2.25 0 0 1 5 18.25V5.75A2.25 2.25 0 0 1 7.25 3.5Zm0 2A.25.25 0 0 0 7 5.75v12.5c0 .14.11.25.25.25h9c.14 0 .25-.11.25-.25V9.3h-2.8a1.25 1.25 0 0 1-1.25-1.25V5.5H7.25Z"/><path fill="currentColor" d="M8.6 12.2a1 1 0 0 1 1-1h4.8a1 1 0 1 1 0 2H9.6a1 1 0 0 1-1-1Zm0 3.4a1 1 0 0 1 1-1h3.2a1 1 0 1 1 0 2H9.6a1 1 0 0 1-1-1Z"/></svg>'
   const ICON_DOWNLOAD =
-    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 4.5v10" stroke-linecap="round"/><path d="m8 10.8 4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 19h13" stroke-linecap="round"/></svg>'
-
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path fill="currentColor" d="M12 3.2a1 1 0 0 1 1 1v8.1l2.3-2.3a1 1 0 1 1 1.42 1.42l-4.01 4.01a1 1 0 0 1-1.42 0L7.28 11.4a1 1 0 0 1 1.42-1.42L11 12.3V4.2a1 1 0 0 1 1-1Z"/><path fill="currentColor" d="M4.4 14.4a1 1 0 0 1 2 0v3.1c0 .5.4.9.9.9h9.4c.5 0 .9-.4.9-.9v-3.1a1 1 0 1 1 2 0v3.1a2.9 2.9 0 0 1-2.9 2.9H7.3a2.9 2.9 0 0 1-2.9-2.9v-3.1Z"/></svg>'
   const makeButton = () => {
     const button = document.createElement('button')
     button.type = 'button'
@@ -621,7 +597,7 @@
     // Sit immediately left of the site's cluster; fall back to a small inset.
     const rowRect = row.getBoundingClientRect()
     const clusterLeft = clusterLeftOf(row)
-    const gap = clusterLeft == null ? 12 : Math.max(8, Math.round(rowRect.right - clusterLeft + 10))
+    const gap = clusterLeft == null ? 8 : Math.max(8, Math.round(rowRect.right - clusterLeft))
     group.style.right = `${gap}px`
     return group
   }
