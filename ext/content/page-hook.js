@@ -169,7 +169,57 @@
   window.addEventListener('message', (event) => {
     const data = event.data
     if (!data || data.source !== 'dcinema-content' || data.type !== 'query') return
-    sweepTiming()
+    // ---- IM conversation rows ------------------------------------------------
+  /**
+   * The 消息 panel opens a conversation from `onMouseDown` bound on the row wrapper
+   * (`[data-e2e="conversation-item"]`). That handler is only reachable through
+   * React's own props — a synthetic DOM press never reaches it — and when the press
+   * is lost upstream the row's click does nothing at all: the list stays put and no
+   * chat opens.
+   *
+   * This script runs in the page's world, so it can read `__reactProps$…` off a row
+   * and invoke the handler that is already bound there. Every click on a row gets
+   * that call as a fallback; selecting a conversation that is already selected is a
+   * no-op, so the normal path is unaffected. Repeat calls for one row are collapsed.
+   */
+  const IM_ROW = '[data-e2e="conversation-item"]'
+  const bridgedAt = new WeakMap()
+
+  document.addEventListener(
+    'click',
+    (event) => {
+      const row = event.target && event.target.closest ? event.target.closest(IM_ROW) : null
+      if (!row) return
+      const now = Date.now()
+      if (now - (bridgedAt.get(row) || 0) < 400) return
+      bridgedAt.set(row, now)
+
+      const key = Object.keys(row).find((k) => k.startsWith('__reactProps$'))
+      const props = key ? row[key] : null
+      if (!props || typeof props.onMouseDown !== 'function') return
+      const rect = row.getBoundingClientRect()
+      try {
+        props.onMouseDown({
+          button: 0,
+          buttons: 1,
+          clientX: rect.left + 24,
+          clientY: rect.top + rect.height / 2,
+          currentTarget: row,
+          target: row,
+          nativeEvent: { button: 0 },
+          preventDefault() {},
+          stopPropagation() {},
+          persist() {},
+          isDefaultPrevented: () => false,
+          isPropagationStopped: () => false,
+        })
+      } catch {
+        /* the row refused the call */
+      }
+    },
+    true,
+  )
+  sweepTiming()
     window.postMessage(
       {
         source: 'dcinema-page',
