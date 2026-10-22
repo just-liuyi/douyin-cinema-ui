@@ -676,9 +676,9 @@
   }
 
   const CHEVRON_LEFT =
-    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m14.5 6-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m14.5 6-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   const CHEVRON_RIGHT =
-    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m9.5 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m9.5 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
   const placeToggle = (button, collapsed) => {
     const column = sidebarColumn()
