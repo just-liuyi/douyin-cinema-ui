@@ -383,6 +383,9 @@
     /* the page may be out of the extension's context */
   }
 
+  /** Guards against a second click while a download is being prepared. */
+  let busy = false
+
   const doDownload = async (event) => {
     event.preventDefault()
     event.stopPropagation()
