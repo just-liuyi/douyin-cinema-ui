@@ -461,6 +461,30 @@
   // Icons follow douyin's own header glyphs: a 24x24 viewBox rendered at 22px,
   // solid `currentColor` fills (their glyphs are filled outlines, not strokes), so
   // the pair reads at the same visual weight as 充钻石 / 通知 / 投稿.
+  /** Jumps to the standalone page for the video that is on screen. */
+  const makeDetailButton = () => {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'dcinema-detail dcinema-native-item'
+    button.title = '进入详情页'
+    button.setAttribute('aria-label', '进入详情页')
+    button.innerHTML = `${ICON_DETAIL}<span>详情</span>`
+    button.addEventListener(
+      'click',
+      (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        const id = activeAwemeId()
+        if (!id) {
+          toast('未取到当前内容编号，请先让它出现在画面上', 'warn')
+          return
+        }
+        location.href = currentKind() === 'note' ? `/note/${id}` : `/video/${id}`
+      },
+      true,
+    )
+    return button
+  }
   const ICON_DETAIL =
     '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M7.25 3.5h7.1a2.5 2.5 0 0 1 1.77.73l1.65 1.65a2.5 2.5 0 0 1 .73 1.77v10.6a2.25 2.25 0 0 1-2.25 2.25h-9A2.25 2.25 0 0 1 5 18.25V5.75A2.25 2.25 0 0 1 7.25 3.5Zm0 2A.25.25 0 0 0 7 5.75v12.5c0 .14.11.25.25.25h9c.14 0 .25-.11.25-.25V9.3h-2.8a1.25 1.25 0 0 1-1.25-1.25V5.5H7.25Z"/><path fill="currentColor" d="M8.6 12.2a1 1 0 0 1 1-1h4.8a1 1 0 1 1 0 2H9.6a1 1 0 0 1-1-1Zm0 3.4a1 1 0 0 1 1-1h3.2a1 1 0 1 1 0 2H9.6a1 1 0 0 1-1-1Z"/></svg>'
   const ICON_DOWNLOAD =
@@ -718,11 +742,20 @@
 
     let pending = null
     let scheduled = false
+    const safely = (task) => {
+      try {
+        task()
+      } catch (error) {
+        // A broken step must not take the whole tick down with it.
+        console.warn('[dcinema] step failed:', error)
+      }
+    }
+
     const run = () => {
       scheduled = false
       if (document.hidden) return
-      injectActions()
-      mountSidebarToggle()
+      safely(injectActions)
+      safely(mountSidebarToggle)
     }
     const schedule = () => {
       if (pending) return
