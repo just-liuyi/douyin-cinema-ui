@@ -1,71 +1,58 @@
 # Douyin Cinema UI
 
-把抖音网页版改造成**影院式暗色界面**的浏览器扩展（Manifest V3），附带**无水印视频下载**。
+抖音网页版的**轻量增强扩展**（Chrome MV3）：保留抖音原本的界面，只加两件事——**进入详情页**和**无水印下载**，外加一个「进度条点击失效时」的兜底。
 
-> A Chrome (MV3) extension that reworks douyin.com into a dark, cinema-style layout, with watermark-free video download.
+> A deliberately small Chrome extension for douyin.com: leave the site alone, add a 详情 button, a watermark-free download button, and a seek fallback that only kicks in when the site's own progress bar stops responding.
 
-## 特性
+## 做什么
 
-| 方面 | 内容 |
+| 功能 | 说明 |
 |---|---|
-| 顶栏 | 自绘一条栏：品牌 · 推荐/关注/我的 · 搜索 · ⬇ 下载 · 消息/我的 |
-| 频道 | 左侧栏整体移除，不占宽度；视频左右铺满 |
-| 播放 | 左右铺满（横屏裁切、竖屏完整）、修复进度条点击跳转、`←`/`→` 键 ±5 秒 |
-| 精简 | 隐藏点赞 / 收藏 / 听抖音 / 更多、AI 气泡、下载 App 促销、识别画面、投稿等入口 |
-| 右侧竖排 | 复用抖音原生动作条，仅改为贴右边 + 垂直居中 |
-| 下载 | 视频：浏览器原生流式下载（隐藏 iframe + DNR），`douyin/<作者>-<描述>.mp4`；图文：逐张保存 `douyin/<标题>-N.webp` |
-| 详情 | 顶栏「详情」按钮跳转 `/video/<id>` 或 `/note/<id>` |
-| 首屏 | `document_start` 阶段遮蔽，刷新时不会先闪出原页面 |
-| 图标 | `ext/icons/` 下的 16/32/48/128 PNG 与同款 SVG |
+| **详情** | 读取当前视频/图文的 id，跳转 `/video/<id>` 或 `/note/<id>` |
+| **下载** | 视频走浏览器原生下载任务（隐藏 iframe + DNR 兜底），文件名 `douyin/<作者>-<描述>.mp4`；图文逐张保存 `.webp` |
+| **进度条兜底** | 每次点击进度条都会**测量**站点是否真的跳转了；只有在它没反应时，扩展才自己执行 seek 并给出"跳转至 mm:ss"提示 |
+| 位置 | 两个按钮追加在播放器自带控制条的右侧（`.xg-right-grid`）；没有播放器的页面（如图文）改为右下角浮动 |
+
+## 不做什么
+
+上一版曾重写整套界面（自建顶栏、隐藏侧栏与各类入口、强制视频铺满、搜索历史……）。现在这些**全部移除**——页面就是抖音本来的样子，扩展只做上面三件事。
 
 ## 安装
 
-1. 打开 `chrome://extensions/`，右上角开启「开发者模式」
-2. 点「加载已解压的扩展程序」，选择本仓库的 **`ext/`** 目录
-3. 打开/刷新 <https://www.douyin.com/>
+1. `chrome://extensions/` → 开启「开发者模式」
+2. 「加载已解压的扩展程序」→ 选择本仓库的 **`ext/`** 目录
+3. 刷新 douyin.com
 
-修改代码后需要点扩展卡片上的 **↻ 重新加载** 再刷新页面。
+改代码后需在扩展卡片点 **↻ 重载**，再刷新页面。
 
 ## 结构
 
 ```
 ext/
-├── manifest.json          MV3 清单（含 icons）
-├── background.js          下载执行 + 会话 DNR 规则集开关 + 文件命名
-├── rules/download.json    让 CDN 放行的静态规则（referer / content-disposition）
-├── icons/                 扩展图标（16/32/48/128 PNG + 同款 SVG）
+├── manifest.json          MV3 清单（downloads / declarativeNetRequestWithHostAccess）
+├── background.js          下载任务、完成/失败回报、DNR 规则集开关
+├── rules/download.json    referer / origin，以及 iframe 兜底用的 content-disposition
 ├── content/
-│   ├── boot.js            document_start：首屏遮蔽（防闪烁）
+│   ├── boot.js            document_start：加作用域类 + preconnect
 │   ├── page-hook.js       主世界：网络捕获 + aweme JSON 解析（取无水印地址）
-│   ├── content.js         隔离世界：顶栏、精简、进度条修复、下载
-│   └── style.css          全部注入样式（作用域 html.dcinema）
-└── README.md              实现细节与取舍（推荐阅读）
-
-mockups/                   设计探索用的静态样稿（可直接双击打开）
-├── mock-a-semi-clean.html
-├── mock-b-cinema.html
-└── mock-c-editorial.html
+│   ├── content.js         隔离世界：两个按钮 + 进度条兜底 + 下载编排
+│   └── style.css          仅按钮与 toast 的样式
+├── icons/                 16/32/48/128 PNG + SVG
+└── README.md              实现细节
+docs/TEST-REPORT.md        历史测试报告（对应早期的「影院版」，部分条目已不适用）
+mockups/                   早期设计探索稿（历史存档）
 ```
-
-## 实现要点
-
-- **不重写播放器**：只接管进度条手势（站点该手势在部分构建里失效），画面仍由原播放器渲染
-- **不隐藏必要的原生控件**：消息面板等通过「转发点击到原生元素」实现，因此保留其布局
-- **取址靠网络捕获**：MSE 播放时 `<video>` 只有 `blob:`，无水印地址来自 aweme 接口的 `play_addr` 与 `performance` 资源
-- **下载不走 JS**：隐藏 1×1 iframe + DNR 改写响应头，由浏览器流式写盘，无 CORS、无内存压力
-- **选择器策略**：优先 `data-e2e` 与稳定语义类名（如 `.positionBox`），哈希类名一律不用
-
-详见 [`ext/README.md`](ext/README.md)。
 
 ## 已知限制
 
-- 抖音发版可能使某些选择器失效；关键改动都集中在 `content.js` 的若干 `trim*`/`build*` 函数里，便于快速修复
-- 下载地址有时效（CDN 签名），需在视频正在播放时点击
-- 不处理直播与付费内容
+- 依赖抖音自身的 DOM 结构（`.xg-right-grid`、`xg-progress`、`[data-e2e]`）；改版可能失效
+- 下载地址有时效，需在视频正在播放时点击
+- 页面上同时挂着多个播放器（上/当前/下），逻辑一律以「当前可见视频」为基准
+- 不处理直播与付费/加密内容
 
 ## 免责声明
 
-仅供个人学习与离线备份使用。请遵守抖音用户协议与版权法规，不要用于二次分发或商业用途。
+仅供个人学习与离线备份，请遵守抖音用户协议与版权法规，不要二次分发。
 
 ## License
 
