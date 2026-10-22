@@ -179,14 +179,11 @@
   transition: width 0.18s ease, min-width 0.18s ease;
 }
 
+/*
+ * `display: none` rather than a 0 width: douyin renders the navigation itself in
+ * `position: fixed` children inside this column, and fixed boxes are not clipped
+ * by an ancestor's overflow — collapsing the width left them painted at 160px.
+ */
 .dcinema-sidebar-collapsed .dcinema-sidebar {
-  flex: 0 0 0 !important;
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  margin: 0 !important;
-  border: 0 !important;
-  overflow: hidden !important;
+  display: none !important;
 }
