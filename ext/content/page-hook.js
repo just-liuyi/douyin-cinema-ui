@@ -181,4 +181,133 @@
       '*',
     )
   })
+
+  // ---- seek fallback for the new douyin-player ---------------------------
+  /**
+   * Douyin replaced xgplayer with `douyin-player`. Its <video> is fed through
+   * `srcObject` (seekable is empty, duration is NaN), so writing
+   * `video.currentTime` does nothing — a seek has to go through the page's own
+   * player object (`window.player`, whose `media` is the on-screen <video>).
+   * Only this MAIN-world script can reach that object; the content script lives
+   * in an isolated world and cannot.
+   *
+   * Measured, not assumed: on pointerup we wait a beat and check whether the
+   * player reached the requested position. If the site handled the click/drag we
+   * do nothing; if it did not, we seek ourselves.
+   */
+  const SEEK_SETTLE_MS = 260
+
+  const playerFor = (track) => {
+    const root = track.closest('.douyin-player')
+    const video = root && root.querySelector('video')
+    if (!video) return null
+    for (const name of ['player', 'nextPlayer']) {
+      const candidate = window[name]
+      try {
+        if (candidate && candidate.media === video && Number.isFinite(candidate.duration)) return candidate
+      } catch {
+        /* keep looking */
+      }
+    }
+    return null
+  }
+
+  const ratioAt = (track, clientX) => {
+    const rect = track.getBoundingClientRect()
+    if (!rect.width) return 0
+    return Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+  }
+
+  const paint = (track, ratio) => {
+    const pct = `${(ratio * 100).toFixed(2)}%`
+    const played = track.querySelector('.douyin-player-progress-played')
+    const knob = track.querySelector('.douyin-player-progress-btn')
+    if (played) played.style.width = pct
+    if (knob) knob.style.left = pct
+  }
+
+  const clock = (seconds) =>
+    `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
+
+  const notify = (text) => {
+    let node = document.querySelector('.dcinema-toast')
+    if (!node) {
+      node = document.createElement('div')
+      node.className = 'dcinema-toast'
+      document.documentElement.appendChild(node)
+    }
+    node.textContent = text
+    node.dataset.kind = 'info'
+    node.classList.add('on')
+    clearTimeout(notify.timer)
+    notify.timer = setTimeout(() => node.classList.remove('on'), 1400)
+  }
+
+  let drag = null
+
+  window.addEventListener(
+    'pointerdown',
+    (event) => {
+      if (event.button !== 0) return
+      const track = event.target instanceof Element ? event.target.closest('.douyin-player-progress') : null
+      if (!track) return
+      const player = playerFor(track)
+      if (!player) return
+      drag = { track, player, ratio: ratioAt(track, event.clientX) }
+      paint(track, drag.ratio)
+    },
+    true,
+  )
+
+  window.addEventListener(
+    'pointermove',
+    (event) => {
+      if (!drag) return
+      if (!(event.buttons & 1)) return
+      drag.ratio = ratioAt(drag.track, event.clientX)
+      paint(drag.track, drag.ratio)
+    },
+    true,
+  )
+
+  const finish = (event) => {
+    if (!drag) return
+    const { track, player } = drag
+    const ratio = event && event.type === 'pointerup' ? ratioAt(track, event.clientX) : drag.ratio
+    drag = null
+    let duration = 0
+    try {
+      duration = player.duration
+    } catch {
+      return
+    }
+    if (!Number.isFinite(duration) || duration <= 0) return
+    const target = ratio * duration
+    const tolerance = Math.max(1, duration * 0.01)
+    setTimeout(() => {
+      let now = NaN
+      try {
+        now = player.currentTime
+      } catch {
+        return
+      }
+      if (Math.abs(now - target) <= tolerance) return // the site handled it
+      try {
+        player.currentTime = target
+        paint(track, ratio)
+        notify(`跳转至 ${clock(target)}`)
+      } catch {
+        /* the player may have been torn down by a slide change */
+      }
+    }, SEEK_SETTLE_MS)
+  }
+
+  window.addEventListener('pointerup', finish, true)
+  window.addEventListener(
+    'pointercancel',
+    () => {
+      drag = null
+    },
+    true,
+  )
 })()
