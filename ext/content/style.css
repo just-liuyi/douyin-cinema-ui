@@ -175,13 +175,13 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Same footprint and tint as the native 点赞 icon: glyph about 20px tall,
-   white at 0.9 opacity (measured on screen: 247 vs 255 for pure white). */
+/* Same footprint as the native 点赞 icon (glyph about 20px tall). The tint is
+   set in the side panel (--dcinema-icon-opacity); the default 0.9 matches 点赞. */
 .dcinema-rail-btn svg {
   display: block;
   width: 26px;
   height: 26px;
-  opacity: 0.9;
+  opacity: var(--dcinema-icon-opacity, 0.9);
   transition: transform 0.18s cubic-bezier(0.3, 1.4, 0.6, 1), opacity 0.15s ease;
 }
 

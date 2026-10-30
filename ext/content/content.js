@@ -551,79 +551,145 @@
     return Boolean(match && match[1] === activeAwemeId())
   }
 
+  /** Undo our only change to the host: the inline position we may have added. */
+  const releaseHost = (host) => {
+    if (host && host.dataset.dcinemaPositioned) {
+      host.style.position = ''
+      delete host.dataset.dcinemaPositioned
+    }
+  }
+
+  const removeStage = () => {
+    for (const group of document.querySelectorAll('.' + STAGE_CLASS)) {
+      releaseHost(group.parentElement)
+      group.remove()
+    }
+  }
+
+  const buildStage = (withDetail, withDownload) => {
+    const group = document.createElement('div')
+    group.className = STAGE_CLASS
+    group.dataset.set = `${withDetail ? 1 : 0}${withDownload ? 1 : 0}`
+    if (withDetail) group.appendChild(makeDetailButton())
+    if (withDownload) group.appendChild(makeButton())
+    // Squash-and-stretch on press, like douyin's 点赞; restart it on every press.
+    group.addEventListener(
+      'pointerdown',
+      (event) => {
+        const button = event.target instanceof Element ? event.target.closest('.dcinema-rail-btn') : null
+        if (!button) return
+        button.classList.remove('dc-bounce')
+        void button.offsetWidth
+        button.classList.add('dc-bounce')
+      },
+      true,
+    )
+    // The animation runs on the inner <svg>, so its end event targets the svg.
+    group.addEventListener('animationend', (event) => {
+      if (event.animationName !== 'dcinema-rail-bounce' || !(event.target instanceof Element)) return
+      const button = event.target.closest('.dcinema-rail-btn')
+      if (button) button.classList.remove('dc-bounce')
+    })
+    return group
+  }
+
   const injectActions = () => {
     // The header placement is gone; drop copies left by an older build.
     for (const stale of document.querySelectorAll('.dcinema-header-actions')) stale.remove()
 
-    const host = hasActiveItem() ? stageHost() : null
-    let group = document.querySelector('.' + STAGE_CLASS)
+    const withDetail = features.detail
+    const withDownload = features.download
+    const host = (withDetail || withDownload) && hasActiveItem() ? stageHost() : null
     if (!host) {
-      if (group) group.remove()
+      removeStage()
       return
     }
-    if (!group) {
-      group = document.createElement('div')
-      group.className = STAGE_CLASS
-      group.appendChild(makeDetailButton())
-      group.appendChild(makeButton())
-      // Squash-and-stretch on press, like douyin's 点赞; restart it on every press.
-      group.addEventListener(
-        'pointerdown',
-        (event) => {
-          const button = event.target instanceof Element ? event.target.closest('.dcinema-rail-btn') : null
-          if (!button) return
-          button.classList.remove('dc-bounce')
-          void button.offsetWidth
-          button.classList.add('dc-bounce')
-        },
-        true,
-      )
-      // The animation runs on the inner <svg>, so its end event targets the svg.
-      group.addEventListener('animationend', (event) => {
-        if (event.animationName !== 'dcinema-rail-bounce' || !(event.target instanceof Element)) return
-        const button = event.target.closest('.dcinema-rail-btn')
-        if (button) button.classList.remove('dc-bounce')
-      })
+
+    const wanted = `${withDetail ? 1 : 0}${withDownload ? 1 : 0}`
+    let group = document.querySelector('.' + STAGE_CLASS)
+    if (group && group.dataset.set !== wanted) {
+      removeStage()
+      group = null
     }
-    if (group.parentElement !== host) host.appendChild(group)
-    if (getComputedStyle(host).position === 'static') host.style.position = 'relative'
+    if (!group) group = buildStage(withDetail, withDownload)
+    if (group.parentElement !== host) {
+      releaseHost(group.parentElement)
+      host.appendChild(group)
+    }
+    if (getComputedStyle(host).position === 'static') {
+      host.style.position = 'relative'
+      host.dataset.dcinemaPositioned = '1'
+    }
 
     const detail = group.querySelector('.dcinema-detail')
     if (detail) detail.hidden = onOwnDetailPage()
     const download = group.querySelector('.dcinema-dl')
     if (download) download.title = currentKind() === 'note' ? '下载图文原图' : '下载无水印视频'
   }
-
   // ------------------------------------------------------------- settings
   /**
-   * Preferences live in chrome.storage.local and are chosen in the side panel.
-   * The MAIN-world hook cannot read extension storage, so they are mirrored onto
-   * <html> as data attributes; detection results travel the other way.
+   * Every feature can be switched off on its own in the side panel; with all of
+   * them off the page is plain douyin — nothing of ours is mounted, no class,
+   * inline style or listener effect remains. Preferences live in
+   * chrome.storage.local; the MAIN-world hook cannot read extension storage, so
+   * the two it needs are mirrored onto <html> as data attributes.
    */
-  const SETTINGS_DEFAULT = { seekMode: 'auto', chapterTips: true }
-  let currentSeekMode = 'auto'
-  let warnedSeekOff = false
+  const DEFAULT_FEATURES = { detail: true, download: true, seek: true, chapters: true, sidebar: true }
+  const DEFAULT_ICON_OPACITY = 90
 
-  const applySettings = (settings) => {
-    const mode = ['auto', 'on', 'off'].includes(settings.seekMode) ? settings.seekMode : 'auto'
-    currentSeekMode = mode
-    document.documentElement.dataset.dcinemaSeek = mode
-    document.documentElement.dataset.dcinemaChapters = settings.chapterTips === false ? 'off' : 'on'
+  /** Accepts the current shape and the older `seekMode` / `chapterTips` keys. */
+  const normalizeSettings = (raw) => {
+    const source = raw && typeof raw.features === 'object' && raw.features ? raw.features : {}
+    const next = { ...DEFAULT_FEATURES }
+    for (const key of Object.keys(DEFAULT_FEATURES)) if (typeof source[key] === 'boolean') next[key] = source[key]
+    if (!raw || !raw.features) {
+      if (raw && raw.seekMode === 'off') next.seek = false
+      if (raw && raw.chapterTips === false) next.chapters = false
+    }
+    const opacity = Number(raw && raw.iconOpacity)
+    return {
+      features: next,
+      iconOpacity: Number.isFinite(opacity) ? Math.min(100, Math.max(10, Math.round(opacity))) : DEFAULT_ICON_OPACITY,
+    }
+  }
+
+  let features = { ...DEFAULT_FEATURES }
+
+  const applySettings = (raw) => {
+    const settings = normalizeSettings(raw)
+    features = settings.features
+    const root = document.documentElement
+    root.dataset.dcinemaSeek = features.seek ? 'auto' : 'off'
+    root.dataset.dcinemaChapters = features.chapters ? 'on' : 'off'
+    root.style.setProperty('--dcinema-icon-opacity', String(settings.iconOpacity / 100))
+    // Re-evaluate right away so switching off removes things without waiting.
+    try {
+      injectActions()
+    } catch {
+      /* next tick retries */
+    }
+    try {
+      mountSidebarToggle()
+    } catch {
+      /* next tick retries */
+    }
   }
 
   const loadSettings = () => {
     try {
-      chrome.storage.local.get(SETTINGS_DEFAULT).then(applySettings).catch(() => applySettings(SETTINGS_DEFAULT))
+      chrome.storage.local
+        .get(['features', 'iconOpacity', 'seekMode', 'chapterTips'])
+        .then(applySettings)
+        .catch(() => applySettings(null))
     } catch {
-      applySettings(SETTINGS_DEFAULT)
+      applySettings(null)
     }
   }
-
   const installSettingsBridge = () => {
     loadSettings()
     try {
       chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === 'local' && (changes.seekMode || changes.chapterTips)) loadSettings()
+        if (area === 'local' && (changes.features || changes.iconOpacity || changes.seekMode || changes.chapterTips)) loadSettings()
       })
     } catch {
       /* extension context gone */
@@ -644,11 +710,8 @@
         } catch {
           /* extension context gone */
         }
-        if (!data.works && currentSeekMode === 'off' && !warnedSeekOff) {
-          warnedSeekOff = true
-          toast('检测到抖音进度条点击/拖动无效，可在扩展侧边栏开启「进度条兜底」', 'warn')
-        }
         return
+
       }
 
       if (data.type === 'seek-test-result') {
@@ -744,13 +807,39 @@
    * the video covered the picture, and the header is where douyin keeps its own
    * controls anyway.
    */
+  /**
+   * Feature off: remove the button and every trace of the collapse — the
+   * collapsed class (so the sidebar is visible again), our marker classes and the
+   * inline position on the header row. The stored preference is kept, so turning
+   * the feature back on restores the user's last choice.
+   */
+  const unmountSidebarToggle = () => {
+    for (const button of document.querySelectorAll('.dcinema-sidebar-toggle')) button.remove()
+    document.documentElement.classList.remove(COLLAPSED_CLASS)
+    for (const el of document.querySelectorAll('.dcinema-sidebar')) el.classList.remove('dcinema-sidebar')
+    for (const row of document.querySelectorAll('.dcinema-header-row')) {
+      row.classList.remove('dcinema-header-row')
+      if (row.dataset.dcinemaPositioned) {
+        row.style.position = ''
+        delete row.dataset.dcinemaPositioned
+      }
+    }
+  }
+
   const mountSidebarToggle = () => {
+    if (!features.sidebar) {
+      unmountSidebarToggle()
+      return
+    }
     const column = sidebarColumn()
     const row = siteHeaderRow()
     if (!column || !row) return
     column.classList.add('dcinema-sidebar')
     row.classList.add('dcinema-header-row')
-    if (getComputedStyle(row).position === 'static') row.style.position = 'relative'
+    if (getComputedStyle(row).position === 'static') {
+      row.style.position = 'relative'
+      row.dataset.dcinemaPositioned = '1'
+    }
 
     let button = row.querySelector('.dcinema-sidebar-toggle')
     if (!button) {

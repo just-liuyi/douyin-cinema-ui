@@ -400,8 +400,11 @@
       if (!track) return
       const player = playerFor(track)
       drag = { track, player, ratio: ratioAt(track, event.clientX), startTime: player ? player.currentTime : NaN }
-      document.documentElement.classList.add('dcinema-dragging')
-      if (seekMode() !== 'off') paint(track, drag.ratio)
+      // With the takeover off the page must stay untouched: no class, no paint.
+      if (seekMode() !== 'off') {
+        document.documentElement.classList.add('dcinema-dragging')
+        paint(track, drag.ratio)
+      }
       showTip(track, event.clientX)
     },
     true,
@@ -433,7 +436,7 @@
     document.documentElement.classList.remove('dcinema-dragging')
     hideTip()
     const mode = seekMode()
-    if (mode === 'off' || !player) return
+    if (!player) return
     const duration = durationOf(track, player)
     if (!duration) return
     const target = ratio * duration
@@ -462,8 +465,10 @@
         return
       }
       const siteWorked = Math.abs(now - target) <= tolerance
+      // Measured in every mode so the side panel always knows the native state;
+      // only the takeover itself depends on the switch.
       report({ works: siteWorked, method: 'passive', target, now })
-      if (!siteWorked) takeOver()
+      if (!siteWorked && mode !== 'off') takeOver()
     }, SEEK_SETTLE_MS)
   }
 
