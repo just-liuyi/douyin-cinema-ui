@@ -144,55 +144,95 @@
   display: none !important;
 }
 /* ------------------------------------------------------- stage actions
-   详情 / 下载 in the top-right corner of the playback area, stacked
-   vertically, in line with douyin's own right-hand rail. */
+   详情 / 下载 in the top-right corner of the playback area, drawn like
+   douyin's own 点赞 / 收藏: bare white glyphs, no plate, no label, in a
+   column centred on the native rail. */
 
 .dcinema-stage-actions {
   position: absolute;
   top: 16px;
-  right: 20px;
+  right: 24px;
   z-index: 30;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   pointer-events: auto;
 }
 
-.dcinema-stage-actions .dcinema-native-item {
-  width: 44px;
-  height: 54px;
+.dcinema-rail-btn {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 2px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.28);
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 11px;
-  line-height: 16px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(6px);
-}
-
-.dcinema-stage-actions .dcinema-native-item:hover {
-  background: rgba(0, 0, 0, 0.5);
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
   color: #fff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.dcinema-stage-actions .dcinema-native-item svg {
-  width: 24px;
-  height: 24px;
-  margin-top: 0;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+.dcinema-rail-btn svg {
+  display: block;
+  width: 32px;
+  height: 32px;
+  transition: transform 0.18s cubic-bezier(0.3, 1.4, 0.6, 1);
 }
 
-.dcinema-stage-actions .dcinema-native-item span {
-  line-height: 16px;
+.dcinema-rail-btn:hover svg {
+  transform: scale(1.12);
 }
 
-.dcinema-stage-actions .dcinema-native-item[hidden] {
+.dcinema-rail-btn:active svg {
+  transform: scale(0.88);
+  transition-duration: 0.08s;
+}
+
+.dcinema-rail-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.dcinema-rail-btn[hidden] {
   display: none;
 }
 
+/* Press: the same squash-and-stretch rhythm as douyin's 点赞 animation
+   (commonStreakscaleOut), starting from rest instead of from zero. */
+.dcinema-rail-btn.dc-bounce svg {
+  animation: dcinema-rail-bounce 0.45s ease-out;
+}
+
+@keyframes dcinema-rail-bounce {
+  0% { transform: scale(1); }
+  20% { transform: scale(0.78, 1.1); }
+  47% { transform: scale(1.1, 0.86); }
+  73% { transform: scale(0.92, 1.06); }
+  100% { transform: scale(1); }
+}
+
+/* Download being prepared: breathe until it starts. */
+.dcinema-rail-btn.busy svg {
+  animation: dcinema-rail-busy 1s ease-in-out infinite;
+}
+
+@keyframes dcinema-rail-busy {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dcinema-rail-btn svg,
+  .dcinema-rail-btn.dc-bounce svg,
+  .dcinema-rail-btn.busy svg {
+    transition: none;
+    animation: none;
+  }
+}
 /* --------------------------------------------------------- chapter tip
    Shown above the progress bar on hover and while dragging: chapter
    title, the time under the pointer, and the next chapter. */

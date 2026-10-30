@@ -464,10 +464,10 @@
   const makeDetailButton = () => {
     const button = document.createElement('button')
     button.type = 'button'
-    button.className = 'dcinema-detail dcinema-native-item'
+    button.className = 'dcinema-detail dcinema-rail-btn'
     button.title = '进入详情页'
     button.setAttribute('aria-label', '进入详情页')
-    button.innerHTML = `${ICON_DETAIL}<span>详情</span>`
+    button.innerHTML = ICON_DETAIL
     button.addEventListener(
       'click',
       (event) => {
@@ -484,16 +484,19 @@
     )
     return button
   }
+  // Solid white glyphs in the style of douyin's 点赞 / 收藏 rail icons: one filled
+  // shape per icon, details cut out with evenodd, rendered at the same size.
   const ICON_DETAIL =
-    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M7.25 3.5h7.1a2.5 2.5 0 0 1 1.77.73l1.65 1.65a2.5 2.5 0 0 1 .73 1.77v10.6a2.25 2.25 0 0 1-2.25 2.25h-9A2.25 2.25 0 0 1 5 18.25V5.75A2.25 2.25 0 0 1 7.25 3.5Zm0 2A.25.25 0 0 0 7 5.75v12.5c0 .14.11.25.25.25h9c.14 0 .25-.11.25-.25V9.3h-2.8a1.25 1.25 0 0 1-1.25-1.25V5.5H7.25Z"/><path fill="currentColor" d="M8.6 12.2a1 1 0 0 1 1-1h4.8a1 1 0 1 1 0 2H9.6a1 1 0 0 1-1-1Zm0 3.4a1 1 0 0 1 1-1h3.2a1 1 0 1 1 0 2H9.6a1 1 0 0 1-1-1Z"/></svg>'
+    '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M7 2.8h6.6c.5 0 .98.2 1.33.55l3.92 3.92c.35.35.55.83.55 1.33V19a2.2 2.2 0 0 1-2.2 2.2H7A2.2 2.2 0 0 1 4.8 19V5A2.2 2.2 0 0 1 7 2.8Zm7.4 1.6v3.2h3.2l-3.2-3.2ZM8.6 11.9h6.8a.9.9 0 0 1 0 1.8H8.6a.9.9 0 0 1 0-1.8Zm0 3.6h4.4a.9.9 0 0 1 0 1.8H8.6a.9.9 0 0 1 0-1.8Z"/></svg>'
   const ICON_DOWNLOAD =
-    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path fill="currentColor" d="M12 3.2a1 1 0 0 1 1 1v8.1l2.3-2.3a1 1 0 1 1 1.42 1.42l-4.01 4.01a1 1 0 0 1-1.42 0L7.28 11.4a1 1 0 0 1 1.42-1.42L11 12.3V4.2a1 1 0 0 1 1-1Z"/><path fill="currentColor" d="M4.4 14.4a1 1 0 0 1 2 0v3.1c0 .5.4.9.9.9h9.4c.5 0 .9-.4.9-.9v-3.1a1 1 0 1 1 2 0v3.1a2.9 2.9 0 0 1-2.9 2.9H7.3a2.9 2.9 0 0 1-2.9-2.9v-3.1Z"/></svg>'
+    '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" aria-hidden="true"><path fill="currentColor" d="M10.6 3.6a1.4 1.4 0 0 1 2.8 0v7.1h2.9a1 1 0 0 1 .74 1.67l-4.3 4.75a1 1 0 0 1-1.48 0l-4.3-4.75a1 1 0 0 1 .74-1.67h2.9V3.6Z"/><path fill="currentColor" d="M3.5 15.2a1.5 1.5 0 0 1 3 0v2.3c0 .28.22.5.5.5h10c.28 0 .5-.22.5-.5v-2.3a1.5 1.5 0 0 1 3 0v2.3a3.5 3.5 0 0 1-3.5 3.5H7a3.5 3.5 0 0 1-3.5-3.5v-2.3Z"/></svg>'
   const makeButton = () => {
     const button = document.createElement('button')
     button.type = 'button'
-    button.className = 'dcinema-dl dcinema-native-item'
+    button.className = 'dcinema-dl dcinema-rail-btn'
     button.title = '下载无水印视频'
-    button.innerHTML = `${ICON_DOWNLOAD}<span>下载</span>`
+    button.setAttribute('aria-label', '下载')
+    button.innerHTML = ICON_DOWNLOAD
     button.addEventListener('click', doDownload, true)
     return button
   }
@@ -563,6 +566,24 @@
       group.className = STAGE_CLASS
       group.appendChild(makeDetailButton())
       group.appendChild(makeButton())
+      // Squash-and-stretch on press, like douyin's 点赞; restart it on every press.
+      group.addEventListener(
+        'pointerdown',
+        (event) => {
+          const button = event.target instanceof Element ? event.target.closest('.dcinema-rail-btn') : null
+          if (!button) return
+          button.classList.remove('dc-bounce')
+          void button.offsetWidth
+          button.classList.add('dc-bounce')
+        },
+        true,
+      )
+      // The animation runs on the inner <svg>, so its end event targets the svg.
+      group.addEventListener('animationend', (event) => {
+        if (event.animationName !== 'dcinema-rail-bounce' || !(event.target instanceof Element)) return
+        const button = event.target.closest('.dcinema-rail-btn')
+        if (button) button.classList.remove('dc-bounce')
+      })
     }
     if (group.parentElement !== host) host.appendChild(group)
     if (getComputedStyle(host).position === 'static') host.style.position = 'relative'

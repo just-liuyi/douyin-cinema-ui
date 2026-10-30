@@ -14,7 +14,9 @@
 │                                                  └──────┘ │
 ```
 
-- 结构 `div.dcinema-stage-actions > button.dcinema-native-item.dcinema-detail | .dcinema-dl`
+- 结构 `div.dcinema-stage-actions > button.dcinema-rail-btn.dcinema-detail | .dcinema-dl`
+- 外观照抄原生「点赞 / 收藏」：纯白实心字形（约 23px）、无底色、无文字（名称放在 title / aria-label），与原生竖排同一中轴
+- 动效：悬停放大 1.12；按下时按点赞的节奏「先压扁再拉伸后回弹」（0.45 秒）；下载准备中图标呼吸闪烁；系统开启「减少动态效果」时全部关闭
 - 挂载点：视口内可见面积最大的 `.basePlayerContainer` / `[data-e2e="player-container"]`。信息流、视频详情页、图文详情页都用它；信息流同时挂着上/当前/下多个播放区，面积最大的就是当前这条
 - 已经在本条内容的详情页（`/video/<id>`、`/note/<id>`）时，「详情」自动隐藏
 - 图文内容下「下载」的提示是「下载图文原图」
