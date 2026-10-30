@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Douyin Cinema UI",
-  "version": "0.2.1",
-  "description": "抖音网页版界面重写（影院式）+ 无水印视频下载",
-  "minimum_chrome_version": "111",
+  "version": "0.3.0",
+  "description": "抖音网页版增强：播放区详情/无水印下载、进度条跳转兜底、章节提示、侧栏收放",
+  "minimum_chrome_version": "116",
   "permissions": [
     "downloads",
     "storage",
+    "sidePanel",
     "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
@@ -68,5 +69,16 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "抖音增强 · 设置",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "sidepanel/index.html"
   }
 }

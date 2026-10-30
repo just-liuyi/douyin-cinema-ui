@@ -1,29 +1,8 @@
 /* Douyin Cinema UI — minimal build.
-   The page keeps its own look; this sheet only styles the two injected buttons
-   and the toast, all scoped under html.dcinema so deleting the class removes the
-   whole layer. */
+   The page keeps its own look; this sheet styles only what the extension adds:
+   the stage buttons, the sidebar toggle, the chapter tip and the toast. */
 
 /* --------------------------------------------------------------- buttons */
-
-.dcinema-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 8px;
-  vertical-align: middle;
-}
-
-.dcinema-actions-floating {
-  position: fixed;
-  right: 18px;
-  bottom: 104px;
-  z-index: 2147483000;
-  padding: 6px;
-  border-radius: 999px;
-  background: rgba(16, 16, 20, 0.72);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-}
 
 /*
  * Mirrors douyin's own header entries (充钻石 / 客户端 / 壁纸 / 通知 / 消息 / 投稿):
@@ -116,29 +95,9 @@
   border-color: rgba(254, 44, 85, 0.6);
 }
 
-/* ------------------------------------------------------- header actions
-   Mounted into douyin's own header, right after its entry cluster. */
-
-.dcinema-header-actions {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 12;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-  pointer-events: auto;
-}
-
-.dcinema-header-actions:empty {
-  display: none;
-}
-
-
 /* ------------------------------------------------------ sidebar toggle */
 
-/* Same pill as 详情 / 下载, positioned left of the search field. */
+/* Native-style header entry, positioned left of the search field. */
 .dcinema-sidebar-toggle {
   position: absolute;
   top: 50%;
@@ -183,4 +142,111 @@
  */
 .dcinema-sidebar-collapsed .dcinema-sidebar {
   display: none !important;
+}
+/* ------------------------------------------------------- stage actions
+   详情 / 下载 in the top-right corner of the playback area, stacked
+   vertically, in line with douyin's own right-hand rail. */
+
+.dcinema-stage-actions {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.dcinema-stage-actions .dcinema-native-item {
+  width: 44px;
+  height: 54px;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 11px;
+  line-height: 16px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.dcinema-stage-actions .dcinema-native-item:hover {
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+
+.dcinema-stage-actions .dcinema-native-item svg {
+  width: 24px;
+  height: 24px;
+  margin-top: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.dcinema-stage-actions .dcinema-native-item span {
+  line-height: 16px;
+}
+
+.dcinema-stage-actions .dcinema-native-item[hidden] {
+  display: none;
+}
+
+/* --------------------------------------------------------- chapter tip
+   Shown above the progress bar on hover and while dragging: chapter
+   title, the time under the pointer, and the next chapter. */
+
+.dcinema-chapter-tip {
+  position: fixed;
+  z-index: 2147483001;
+  transform: translate(-50%, calc(-100% + 4px));
+  max-width: 320px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(16, 16, 20, 0.92);
+  color: #f5f5f7;
+  font: 12px/18px 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  backdrop-filter: blur(10px);
+}
+
+.dcinema-chapter-tip.on {
+  opacity: 1;
+}
+
+.dcinema-chapter-tip .dc-tip-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dcinema-chapter-tip .dc-tip-title:empty,
+.dcinema-chapter-tip .dc-tip-next:empty {
+  display: none;
+}
+
+.dcinema-chapter-tip .dc-tip-time {
+  color: #25f4ee;
+  font-variant-numeric: tabular-nums;
+}
+
+.dcinema-chapter-tip .dc-tip-next {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dragging the bar must not select page text. */
+html.dcinema-dragging,
+html.dcinema-dragging * {
+  user-select: none !important;
 }

@@ -1,20 +1,19 @@
 /**
  * Douyin Cinema UI — content script (minimal build).
  *
- * Philosophy: leave douyin.com looking like douyin.com. This script adds exactly
- * three things and nothing else:
+ * Philosophy: leave douyin.com looking like douyin.com. This isolated-world script
+ * only adds:
  *
- * 1. 详情 / 下载 buttons, appended to the player's own control bar so they inherit
- *    the site's styling and position. On pages without a player (an image note)
- *    they float in the bottom-right corner instead.
- * 2. A seek fallback: the site's click-to-seek gesture is broken in some builds.
- *    Every click on the progress bar is measured; only when the site failed to
- *    move the playhead does this script perform the seek itself.
- * 3. The download pipeline (see background.js) — the buttons are meaningless
- *    without it.
+ * 1. 详情 / 下载, stacked in the top-right corner of the playback area
+ *    (`.basePlayerContainer`), for videos and image notes alike.
+ * 2. The sidebar collapse toggle in the header, left of the search field.
+ * 3. The settings bridge: side-panel preferences (chrome.storage) are mirrored onto
+ *    <html data-dcinema-*> for the MAIN-world hook, and its seek detection results
+ *    are stored back for the side panel.
+ * 4. The download pipeline (see background.js).
  *
- * Everything that used to rewrite the page (custom top bar, hidden entries,
- * sidebar removal, video fitting) has been removed on purpose.
+ * Progress-bar seeking, detection and chapter hints live in page-hook.js, the only
+ * place that can reach douyin's player object.
  */
 
 (() => {
@@ -499,83 +498,17 @@
     return button
   }
 
-  // ------------------------------------------------------------ seek/buttons glue
-  const fmt = (seconds) => {
-    if (!Number.isFinite(seconds)) return '00:00'
-    return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
-  }
-
-  // ------------------------------------------------------- seek fallback
+  // -------------------------------------------------------- stage actions
   /**
-   * Measured, not assumed: after each click on the progress bar we wait a beat and
-   * compare the playhead against where it would be from ordinary playback. Only a
-   * "no movement" click is replayed by us, and once the site proves broken the
-   * fallback runs immediately on later clicks.
+   * 详情 / 下载 sit in the top-right corner of the playback area, stacked
+   * vertically, for videos and image notes alike. The playback area is douyin's
+   * `.basePlayerContainer` (feed slides, video detail, note detail all use it);
+   * the feed keeps several of them mounted, so the one covering most of the
+   * viewport is the current one.
    */
-  const SEEK_CHECK_MS = 240
+  const STAGE_CLASS = 'dcinema-stage-actions'
 
-  const installSeekFallback = () => {
-    let siteSeekBroken = false
-
-    document.addEventListener(
-      'pointerdown',
-      (event) => {
-        const track = event.target instanceof Element ? event.target.closest('xg-progress') : null
-        if (!track) return
-        const current = visibleVideo()
-        if (!current) return
-        const video = current.v
-        const duration = video.duration
-        if (!Number.isFinite(duration) || duration <= 0) return
-
-        const rect = track.getBoundingClientRect()
-        if (!rect.width) return
-        const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
-        const target = ratio * duration
-
-        const seek = () => {
-          video.currentTime = target
-          const played = track.querySelector('.xgplayer-progress-played')
-          if (played) played.style.width = `${(ratio * 100).toFixed(2)}%`
-          const knob = track.querySelector('.xgplayer-progress-btn, xg-progress-btn')
-          if (knob) knob.style.left = `${(ratio * 100).toFixed(2)}%`
-          toast(`跳转至 ${fmt(target)}`, 'info')
-        }
-
-        // Once known broken, act immediately — no perceptible delay.
-        if (siteSeekBroken) {
-          seek()
-          return
-        }
-
-        const before = video.currentTime
-        const expectedDelta = video.paused ? 0 : (SEEK_CHECK_MS / 1000) * (video.playbackRate || 1)
-        setTimeout(() => {
-          const delta = video.currentTime - before
-          if (Math.abs(delta - expectedDelta) > 0.18) return // the site seeked
-          siteSeekBroken = true
-          seek()
-        }, SEEK_CHECK_MS)
-      },
-      true,
-    )
-  }
-
-  // ------------------------------------------------------- header actions
-  /**
-   * The buttons live in douyin's own header, right-aligned like the 消息 entry.
-   * They stay mounted and are disabled instead of disappearing, so the header does
-   * not reflow every time a feed item leaves or enters the viewport; gating is the
-   * same for 详情 and 下载: no active video/note, no action.
-   */
-  const ACTIONS_CLASS = 'dcinema-header-actions'
-
-  /**
-   * The header row is the first child of the main column, and it is a plain block
-   * (not a flex row), so the buttons are absolutely positioned just left of
-   * douyin's own entry cluster — that keeps them inside the 56px header without
-   * touching the site's layout.
-   */
+  /** The header row (first child of the main column); used by the sidebar toggle. */
   const siteHeaderRow = () => {
     const layout = document.querySelector('.header-ui')
     if (!layout) return null
@@ -585,65 +518,145 @@
     return (main && main.firstElementChild) || null
   }
 
-  /**
-   * Left edge of the entry cluster that holds 消息 / 投稿, in viewport px.
-   *
-   * Walking up to the row's direct child is wrong: that child spans the whole
-   * header, which would place our buttons at the far left. Stop as soon as the
-   * ancestor is no longer clearly narrower than the row — that is the cluster.
-   */
-  const clusterLeftOf = (row) => {
-    const entry = document.querySelector('[data-e2e="im-entry"]')
-    if (!entry || !row.contains(entry)) return null
-    const rowWidth = row.getBoundingClientRect().width || 1
-    let node = entry
-    while (node.parentElement && row.contains(node.parentElement) && node.parentElement.getBoundingClientRect().width < rowWidth * 0.6) {
-      node = node.parentElement
-    }
-    return node.getBoundingClientRect().left
+  const visibleArea = (el) => {
+    const rect = el.getBoundingClientRect()
+    const w = Math.min(rect.right, innerWidth) - Math.max(rect.left, 0)
+    const h = Math.min(rect.bottom, innerHeight) - Math.max(rect.top, 0)
+    return w > 0 && h > 0 ? w * h : 0
   }
 
-  const ensureActions = () => {
-    const row = siteHeaderRow()
-    if (!row) return null
-
-    let group = document.querySelector('.' + ACTIONS_CLASS)
-    if (!group) {
-      group = document.createElement('div')
-      group.className = ACTIONS_CLASS
-      group.appendChild(makeDetailButton())
-      group.appendChild(makeButton())
+  const stageHost = () => {
+    let best = null
+    let bestArea = 0
+    // Document order puts ancestors first; `>=` lets the inner container win a tie.
+    for (const el of document.querySelectorAll('[data-e2e="player-container"], .basePlayerContainer')) {
+      const area = visibleArea(el)
+      if (area >= bestArea && area > 0) {
+        best = el
+        bestArea = area
+      }
     }
-    if (group.parentElement !== row) row.appendChild(group)
-    row.classList.add('dcinema-header-row')
-    if (getComputedStyle(row).position === 'static') row.style.position = 'relative'
-
-    // Sit immediately left of the site's cluster; fall back to a small inset.
-    const rowRect = row.getBoundingClientRect()
-    const clusterLeft = clusterLeftOf(row)
-    const gap = clusterLeft == null ? 8 : Math.max(8, Math.round(rowRect.right - clusterLeft))
-    group.style.right = `${gap}px`
-    return group
+    if (best && bestArea > 60000) return best
+    // Older layouts: fall back to the on-screen player itself.
+    const current = visibleVideo()
+    return current ? current.v.closest('.douyin-player, .xgplayer') : null
   }
 
-  const setActionsEnabled = (group, enabled) => {
-    for (const button of group.querySelectorAll('button')) {
-      button.disabled = !enabled
-      button.classList.toggle('is-idle', !enabled)
-      if (!enabled) button.title = '先让一条视频或图文出现在画面上'
-    }
-    if (enabled) {
-      const detail = group.querySelector('.dcinema-detail')
-      const download = group.querySelector('.dcinema-dl')
-      if (detail) detail.title = '进入详情页'
-      if (download) download.title = '下载无水印视频'
-    }
+  /** On /video/<id> or /note/<id> for the item on screen, 详情 would just reload. */
+  const onOwnDetailPage = () => {
+    const match = location.pathname.match(/^\/(?:video|note)\/(\d+)/)
+    return Boolean(match && match[1] === activeAwemeId())
   }
 
   const injectActions = () => {
-    const group = ensureActions()
-    if (!group) return
-    setActionsEnabled(group, hasActiveItem())
+    // The header placement is gone; drop copies left by an older build.
+    for (const stale of document.querySelectorAll('.dcinema-header-actions')) stale.remove()
+
+    const host = hasActiveItem() ? stageHost() : null
+    let group = document.querySelector('.' + STAGE_CLASS)
+    if (!host) {
+      if (group) group.remove()
+      return
+    }
+    if (!group) {
+      group = document.createElement('div')
+      group.className = STAGE_CLASS
+      group.appendChild(makeDetailButton())
+      group.appendChild(makeButton())
+    }
+    if (group.parentElement !== host) host.appendChild(group)
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative'
+
+    const detail = group.querySelector('.dcinema-detail')
+    if (detail) detail.hidden = onOwnDetailPage()
+    const download = group.querySelector('.dcinema-dl')
+    if (download) download.title = currentKind() === 'note' ? '下载图文原图' : '下载无水印视频'
+  }
+
+  // ------------------------------------------------------------- settings
+  /**
+   * Preferences live in chrome.storage.local and are chosen in the side panel.
+   * The MAIN-world hook cannot read extension storage, so they are mirrored onto
+   * <html> as data attributes; detection results travel the other way.
+   */
+  const SETTINGS_DEFAULT = { seekMode: 'auto', chapterTips: true }
+  let currentSeekMode = 'auto'
+  let warnedSeekOff = false
+
+  const applySettings = (settings) => {
+    const mode = ['auto', 'on', 'off'].includes(settings.seekMode) ? settings.seekMode : 'auto'
+    currentSeekMode = mode
+    document.documentElement.dataset.dcinemaSeek = mode
+    document.documentElement.dataset.dcinemaChapters = settings.chapterTips === false ? 'off' : 'on'
+  }
+
+  const loadSettings = () => {
+    try {
+      chrome.storage.local.get(SETTINGS_DEFAULT).then(applySettings).catch(() => applySettings(SETTINGS_DEFAULT))
+    } catch {
+      applySettings(SETTINGS_DEFAULT)
+    }
+  }
+
+  const installSettingsBridge = () => {
+    loadSettings()
+    try {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && (changes.seekMode || changes.chapterTips)) loadSettings()
+      })
+    } catch {
+      /* extension context gone */
+    }
+
+    const pendingTests = new Map()
+
+    window.addEventListener('message', (event) => {
+      if (event.source !== window) return
+      const data = event.data
+      if (!data || data.source !== 'dcinema-page') return
+
+      if (data.type === 'seek-report') {
+        try {
+          chrome.storage.local.set({
+            seekDetect: { works: Boolean(data.works), method: data.method || 'passive', at: Date.now(), page: location.pathname },
+          })
+        } catch {
+          /* extension context gone */
+        }
+        if (!data.works && currentSeekMode === 'off' && !warnedSeekOff) {
+          warnedSeekOff = true
+          toast('检测到抖音进度条点击/拖动无效，可在扩展侧边栏开启「进度条兜底」', 'warn')
+        }
+        return
+      }
+
+      if (data.type === 'seek-test-result') {
+        const resolve = pendingTests.get(data.nonce)
+        if (resolve) {
+          pendingTests.delete(data.nonce)
+          resolve(data)
+        }
+      }
+    })
+
+    try {
+      chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+        if (!message || message.type !== 'seek-test') return undefined
+        const nonce = `t${Date.now()}${Math.random().toString(36).slice(2, 6)}`
+        const timer = setTimeout(() => {
+          pendingTests.delete(nonce)
+          sendResponse({ ok: false, reason: 'timeout' })
+        }, 4000)
+        pendingTests.set(nonce, (result) => {
+          clearTimeout(timer)
+          sendResponse(result)
+        })
+        window.postMessage({ source: 'dcinema-content', type: 'seek-test', nonce }, '*')
+        return true
+      })
+    } catch {
+      /* extension context gone */
+    }
   }
   // ------------------------------------------------------ sidebar toggle
   const SIDEBAR_KEY = 'dcinema:sidebar-collapsed'
@@ -715,6 +728,8 @@
     const row = siteHeaderRow()
     if (!column || !row) return
     column.classList.add('dcinema-sidebar')
+    row.classList.add('dcinema-header-row')
+    if (getComputedStyle(row).position === 'static') row.style.position = 'relative'
 
     let button = row.querySelector('.dcinema-sidebar-toggle')
     if (!button) {
@@ -741,7 +756,7 @@
   // --------------------------------------------------------------- boot
   const boot = () => {
     document.documentElement.classList.add('dcinema')
-    installSeekFallback()
+    installSettingsBridge()
 
     let pending = null
     let scheduled = false

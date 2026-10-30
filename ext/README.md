@@ -2,32 +2,66 @@
 
 ## 设计原则
 
-**不改抖音的界面。** 这个扩展只注入两枚按钮，并在必要时兜底进度条点击；其余一律交给抖音自己。
+**尽量不改抖音的界面。** 扩展只加少量东西：播放区里的「详情 / 下载」、进度条跳转兜底与章节提示、顶栏的侧栏收放按钮，以及一个设置侧边栏。
 
-## 一、两个按钮
+## 一、播放区按钮（详情 / 下载）
 
 ```
-播放器控制条（.xg-right-grid）
-[连播] [清屏] [智能] [倍速] … [详情] [下载]   ← 追加在末尾
+┌──────────────── 播放区（.basePlayerContainer）──────────────┐
+│                                                  ┌──────┐ │
+│                                                  │ 详情 │ │ ← 右上角，距顶 16px、距右 20px
+│                                                  │ 下载 │ │   纵向排列，和右侧原生竖排对齐
+│                                                  └──────┘ │
 ```
 
-- 结构 `div.dcinema-actions > button.dcinema-pill.dcinema-detail | .dcinema-dl`
-- 没有 `.xg-right-grid`（例如图文页）时，整组改为 `position: fixed` 贴在右下角
-- 每次调度都会把按钮组移动到「当前可见视频所属的播放器」；抖音重渲染后会自动补回
-- 只有页面上存在可操作内容（可见视频，或 URL/容器里能取到 id）时才出现
+- 结构 `div.dcinema-stage-actions > button.dcinema-native-item.dcinema-detail | .dcinema-dl`
+- 挂载点：视口内可见面积最大的 `.basePlayerContainer` / `[data-e2e="player-container"]`。信息流、视频详情页、图文详情页都用它；信息流同时挂着上/当前/下多个播放区，面积最大的就是当前这条
+- 已经在本条内容的详情页（`/video/<id>`、`/note/<id>`）时，「详情」自动隐藏
+- 图文内容下「下载」的提示是「下载图文原图」
+- 只有当前有视频或图文时才出现；抖音重渲染后由调度自动补回
 
-## 二、进度条兜底（有条件启用）
+## 二、进度条：跳转兜底与检测
 
-不做「无条件接管」，而是**测量后决定**：
+抖音会同时下发两种播放器（A/B）：新版 `douyin-player`（进度条 `.douyin-player-progress`，`<video>` 用 `srcObject` 推流，直接写 `video.currentTime` 无效）和旧版 `xgplayer`（进度条 `xg-progress`）。逻辑在 `content/page-hook.js`（主世界），因为只有主世界能拿到页面的播放器对象 `window.player`。
 
-1. 捕获 `pointerdown` 落在 `xg-progress` 上
-2. 记录当前 `currentTime`，等 240 ms
-3. 期望位移 = `paused ? 0 : 0.24s × playbackRate`
-4. 实际位移与期望相差 > 0.18s → 判定站点自己跳转了，**什么都不做**
-5. 否则判定失效 → 由扩展执行 seek，并把进度条/把手即时绘制到位，提示「跳转至 mm:ss」
-6. 一旦判定失效，后续点击走快速通道（无延迟）
+跳转对象的选择：`window.player` / `window.nextPlayer` 中 `media`（或 `video`）就是该进度条所属 `<video>` 的那个；都不是时，若 `<video>` 本身可 seek（旧播放器）就直接用它。
 
-## 三、下载
+**三种模式**（在侧边栏选择，经 `<html data-dcinema-seek>` 传给页面）：
+
+| 模式 | 行为 |
+|---|---|
+| 自动（默认） | 松开鼠标 260 ms 后看播放器是否到了目标位置（容差 max(1 秒, 1%)）。到了 = 抖音自己处理了，不动；没到 = 插件跳过去 |
+| 始终由插件跳转 | 松开鼠标立刻由插件跳转，不等抖音 |
+| 关闭 | 完全交给抖音；检测到原生失效时在页面提示一次 |
+
+**拖动策略**：按下记录位置；拖动过程中已播放进度与把手跟手绘制，并显示目标时间；在窗口任意位置松开都按最后位置结算；拖动期间禁止选中页面文字（`html.dcinema-dragging`）。
+
+**检测**：
+- 被动：「自动」模式下每次真实点击 / 拖动都会得出一次「原生是否有效」
+- 主动：侧边栏「立即检测」→ 内容脚本 → 页面在进度条上合成一次点击，比较落点，然后把播放位置恢复原样；检测期间插件自己的接管暂停，避免干扰结果
+- 结果写入 `chrome.storage.local.seekDetect = { works, method, at, page }`，侧边栏实时显示
+
+## 三、进度条章节提示
+
+抖音新版的悬停章节文字不再渲染，由扩展补上。悬停或拖动进度条时显示：
+
+```
+4/6 · 基础设施建设
+03:32
+下一章 05:21 · 附属村庄建设
+```
+
+章节数据来源（都在 React 数据里）：新版进度条组件 props 的 `chapters: [{timestamp(ms), desc}]`；旧版播放区容器上的 `awemeInfo.chapterInfo.list` / `item.chapterInfo.list`。没有章节的视频只显示时间。可在侧边栏关闭。
+
+## 四、设置侧边栏
+
+点工具栏上的扩展图标打开（`chrome.sidePanel`，需 Chrome 116+）。
+
+- 进度条：检测状态卡片（未检测 / 原生有效 / 原生无效 + 时间与来源）、「立即检测」、三种模式
+- 进度条提示：悬停显示章节信息（开关）
+- 设置存 `chrome.storage.local`（`seekMode`、`chapterTips`），内容脚本监听变化并同步到页面，**无需刷新**
+
+## 五、下载
 
 取址（`content/page-hook.js`，主世界）：
 
@@ -44,17 +78,25 @@
 
 图文：逐张 `chrome.downloads`，`quiet: true` 静默完成提示，只报「已开始下载 N 张图片」。
 
-## 路由与权限
+## 六、顶栏侧栏收放
 
-| 路由 | 用途 |
-|---|---|
-| `GET /…` | 本扩展不注册任何 HTTP 路由，全部逻辑在页面与服务 worker 内 |
+搜索框左侧的「收起 / 展开」按钮（原生顶栏条目样式）。收起时侧栏列 `display: none`（抖音的导航是 fixed 子元素，只缩宽度会残留），顶栏行由 `calc(100vw - 160px)` 改为 `100%`。状态存 `localStorage['dcinema:sidebar-collapsed']`。
 
-权限：`downloads`、`declarativeNetRequestWithHostAccess`；host 为 douyin.com 与相关 CDN。
+## 权限
+
+`downloads`、`storage`、`sidePanel`、`declarativeNetRequestWithHostAccess`；host 为 douyin.com 与相关 CDN。
+
+## 开发检查
+
+```
+node tools/check-undefined.js ext/content/content.js ext/content/page-hook.js ext/background.js ext/sidepanel/panel.js
+```
+
+扫描「调用了但从未定义」的函数（曾因编辑误删工厂函数导致整个内容脚本失效）。
 
 ## 已知限制
 
-- 选择器依赖抖音结构：`.xg-right-grid`（控制条）、`xg-progress`（进度条）、`.video_<id>`（id）、`[data-e2e="note-detail"]`（图文图集）
+- 选择器依赖抖音结构：`.basePlayerContainer`（播放区）、`.douyin-player-progress` / `xg-progress`（进度条）、`window.player`（新版播放器对象）、`.video_<id>`（id）
+- 主动检测是脚本合成的点击；个别播放器只认真实鼠标事件时，以被动检测（真实点击）的结论为准
 - 下载 URL 有时效（CDN 签名），需在播放时点击
-- 页面同时挂多个播放器，一律以「当前可见视频」为准
 - 不处理直播、付费/加密内容

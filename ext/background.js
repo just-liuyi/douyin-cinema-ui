@@ -221,3 +221,13 @@ chrome.runtime.onInstalled.addListener(() => {
   if (!hasRulesets()) return
   chrome.declarativeNetRequest.updateEnabledRulesets({ disableRulesetIds: [RULESET_ID] }).catch(() => {})
 })
+
+// ---- side panel ---------------------------------------------------------
+// Clicking the toolbar icon opens the settings side panel.
+const enablePanelOnAction = () => {
+  if (!chrome.sidePanel || !chrome.sidePanel.setPanelBehavior) return
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {})
+}
+enablePanelOnAction()
+chrome.runtime.onStartup.addListener(enablePanelOnAction)
+chrome.runtime.onInstalled.addListener(enablePanelOnAction)

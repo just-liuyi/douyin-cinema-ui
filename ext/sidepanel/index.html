@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>抖音增强 · 设置</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <header class="brand">
+      <img src="../icons/icon48.png" alt="" width="28" height="28" />
+      <div>
+        <h1>抖音增强</h1>
+        <p>设置修改后立即生效，无需刷新页面</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>进度条点击 / 拖动</h2>
+
+      <div class="status" id="status" data-state="unknown">
+        <div class="status-line">
+          <span class="dot" aria-hidden="true"></span>
+          <strong id="status-title">还没有检测过</strong>
+        </div>
+        <p id="status-detail">在抖音里点一下进度条，或点下面的「立即检测」。</p>
+      </div>
+
+      <button type="button" class="primary" id="run-test">立即检测</button>
+      <p class="hint" id="test-result" role="status"></p>
+
+      <fieldset class="modes">
+        <legend>由谁负责跳转</legend>
+
+        <label class="mode">
+          <input type="radio" name="seekMode" value="auto" />
+          <span class="mode-body">
+            <span class="mode-title">自动<em>推荐</em></span>
+            <span class="mode-desc">每次点击或拖动后检查抖音有没有跳过去，没跳才由插件接管。</span>
+          </span>
+        </label>
+
+        <label class="mode">
+          <input type="radio" name="seekMode" value="on" />
+          <span class="mode-body">
+            <span class="mode-title">始终由插件跳转</span>
+            <span class="mode-desc">松开鼠标立刻跳转，不等抖音的反应，速度最快。</span>
+          </span>
+        </label>
+
+        <label class="mode">
+          <input type="radio" name="seekMode" value="off" />
+          <span class="mode-body">
+            <span class="mode-title">关闭</span>
+            <span class="mode-desc">完全交给抖音。若检测到原生失效，会在页面上提示一次。</span>
+          </span>
+        </label>
+      </fieldset>
+
+      <p class="advice" id="advice" hidden></p>
+    </section>
+
+    <section class="card">
+      <h2>进度条提示</h2>
+      <label class="switch">
+        <input type="checkbox" id="chapter-tips" />
+        <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+        <span class="switch-text">
+          <span class="mode-title">悬停显示章节信息</span>
+          <span class="mode-desc">鼠标停在进度条上时显示当前章节标题、该处时间和下一章。</span>
+        </span>
+      </label>
+    </section>
+
+    <footer id="version"></footer>
+    <script src="panel.js"></script>
+  </body>
+</html>
