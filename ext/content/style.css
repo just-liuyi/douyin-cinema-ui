@@ -150,13 +150,13 @@
 
 .dcinema-stage-actions {
   position: absolute;
-  top: 16px;
-  right: 24px;
+  top: 18px;
+  right: 26px;
   z-index: 30;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   pointer-events: auto;
 }
 
@@ -165,8 +165,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 0;
   background: none;
@@ -175,15 +175,19 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Same footprint and tint as the native 点赞 icon: glyph about 20px tall,
+   white at 0.9 opacity (measured on screen: 247 vs 255 for pure white). */
 .dcinema-rail-btn svg {
   display: block;
-  width: 32px;
-  height: 32px;
-  transition: transform 0.18s cubic-bezier(0.3, 1.4, 0.6, 1);
+  width: 26px;
+  height: 26px;
+  opacity: 0.9;
+  transition: transform 0.18s cubic-bezier(0.3, 1.4, 0.6, 1), opacity 0.15s ease;
 }
 
 .dcinema-rail-btn:hover svg {
   transform: scale(1.12);
+  opacity: 1;
 }
 
 .dcinema-rail-btn:active svg {

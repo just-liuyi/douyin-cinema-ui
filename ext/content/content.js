@@ -487,9 +487,9 @@
   // Solid white glyphs in the style of douyin's 点赞 / 收藏 rail icons: one filled
   // shape per icon, details cut out with evenodd, rendered at the same size.
   const ICON_DETAIL =
-    '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M7 2.8h6.6c.5 0 .98.2 1.33.55l3.92 3.92c.35.35.55.83.55 1.33V19a2.2 2.2 0 0 1-2.2 2.2H7A2.2 2.2 0 0 1 4.8 19V5A2.2 2.2 0 0 1 7 2.8Zm7.4 1.6v3.2h3.2l-3.2-3.2ZM8.6 11.9h6.8a.9.9 0 0 1 0 1.8H8.6a.9.9 0 0 1 0-1.8Zm0 3.6h4.4a.9.9 0 0 1 0 1.8H8.6a.9.9 0 0 1 0-1.8Z"/></svg>'
+    '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M7 2.8h6.6c.5 0 .98.2 1.33.55l3.92 3.92c.35.35.55.83.55 1.33V19a2.2 2.2 0 0 1-2.2 2.2H7A2.2 2.2 0 0 1 4.8 19V5A2.2 2.2 0 0 1 7 2.8Zm7.4 1.6v3.2h3.2l-3.2-3.2ZM8.6 11.9h6.8a.9.9 0 0 1 0 1.8H8.6a.9.9 0 0 1 0-1.8Zm0 3.6h4.4a.9.9 0 0 1 0 1.8H8.6a.9.9 0 0 1 0-1.8Z"/></svg>'
   const ICON_DOWNLOAD =
-    '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" aria-hidden="true"><path fill="currentColor" d="M10.6 3.6a1.4 1.4 0 0 1 2.8 0v7.1h2.9a1 1 0 0 1 .74 1.67l-4.3 4.75a1 1 0 0 1-1.48 0l-4.3-4.75a1 1 0 0 1 .74-1.67h2.9V3.6Z"/><path fill="currentColor" d="M3.5 15.2a1.5 1.5 0 0 1 3 0v2.3c0 .28.22.5.5.5h10c.28 0 .5-.22.5-.5v-2.3a1.5 1.5 0 0 1 3 0v2.3a3.5 3.5 0 0 1-3.5 3.5H7a3.5 3.5 0 0 1-3.5-3.5v-2.3Z"/></svg>'
+    '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" aria-hidden="true"><path fill="currentColor" d="M10.6 3.6a1.4 1.4 0 0 1 2.8 0v7.1h2.9a1 1 0 0 1 .74 1.67l-4.3 4.75a1 1 0 0 1-1.48 0l-4.3-4.75a1 1 0 0 1 .74-1.67h2.9V3.6Z"/><path fill="currentColor" d="M3.5 15.2a1.5 1.5 0 0 1 3 0v2.3c0 .28.22.5.5.5h10c.28 0 .5-.22.5-.5v-2.3a1.5 1.5 0 0 1 3 0v2.3a3.5 3.5 0 0 1-3.5 3.5H7a3.5 3.5 0 0 1-3.5-3.5v-2.3Z"/></svg>'
   const makeButton = () => {
     const button = document.createElement('button')
     button.type = 'button'
