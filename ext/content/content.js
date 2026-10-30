@@ -460,13 +460,16 @@
   // Icons follow douyin's own header glyphs: a 24x24 viewBox rendered at 22px,
   // solid `currentColor` fills (their glyphs are filled outlines, not strokes), so
   // the pair reads at the same visual weight as 充钻石 / 通知 / 投稿.
-  /** Jumps to the standalone page for the video that is on screen. */
+  /**
+   * Opens the standalone page of the item on screen in a new tab, so the feed
+   * (and its position) stays where it was in the current tab.
+   */
   const makeDetailButton = () => {
     const button = document.createElement('button')
     button.type = 'button'
     button.className = 'dcinema-detail dcinema-rail-btn'
-    button.title = '进入详情页'
-    button.setAttribute('aria-label', '进入详情页')
+    button.title = '在新标签页打开详情页'
+    button.setAttribute('aria-label', '在新标签页打开详情页')
     button.innerHTML = ICON_DETAIL
     button.addEventListener(
       'click',
@@ -478,7 +481,23 @@
           toast('未取到当前内容编号，请先让它出现在画面上', 'warn')
           return
         }
-        location.href = currentKind() === 'note' ? `/note/${id}` : `/video/${id}`
+        const url = new URL(currentKind() === 'note' ? `/note/${id}` : `/video/${id}`, location.origin).href
+        // The feed keeps playing in a background tab; pause it so the two pages
+        // do not talk over each other.
+        const current = visibleVideo()
+        if (current) {
+          try {
+            current.v.pause()
+          } catch {
+            /* nothing to pause */
+          }
+        }
+        // The service worker opens it right after this tab (never popup-blocked);
+        // window.open is only the fallback if the extension context is gone.
+        sendDownloadMessage({ type: 'open-tab', url }).then((response) => {
+          if (response && response.ok) return
+          window.open(url, '_blank', 'noopener')
+        })
       },
       true,
     )

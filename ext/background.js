@@ -205,6 +205,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true
   }
 
+  if (message.type === 'open-tab') {
+    // 详情: open the item's own page in a new tab right after the current one.
+    ;(async () => {
+      try {
+        const url = new URL(String(message.url || ''))
+        if (url.protocol !== 'https:' || !/(^|\.)douyin\.com$/.test(url.hostname)) {
+          sendResponse({ ok: false, error: 'not a douyin url' })
+          return
+        }
+        const source = sender && sender.tab
+        await chrome.tabs.create({
+          url: url.href,
+          active: true,
+          ...(source && Number.isInteger(source.index) ? { index: source.index + 1 } : {}),
+          ...(source && Number.isInteger(source.id) ? { openerTabId: source.id } : {}),
+          ...(source && Number.isInteger(source.windowId) ? { windowId: source.windowId } : {}),
+        })
+        sendResponse({ ok: true })
+      } catch (error) {
+        sendResponse({ ok: false, error: String((error && error.message) || error) })
+      }
+    })()
+    return true
+  }
   if (message.type === 'rules') {
     ;(async () => {
       const rulesReady = await acquireRules()
